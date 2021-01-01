@@ -79,5 +79,5 @@ $ GO111MODULE=on GOPROXY=https://goproxy.cn/,direct go get -u github.com/zeromic
     ```
 * 生成swagger.json 文件
     ```shell script
-    $ goctl api plugin -plugin goctl-android="android -package com.tal" -api user.api -dir .
+    $ goctl api plugin -plugin goctl-swagger="swagger" -api user.api -dir .
     ```
