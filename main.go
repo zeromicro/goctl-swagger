@@ -12,7 +12,7 @@ import (
 var (
 	version  = "20210103"
 	commands = []*cli.Command{
-		{git add
+		{
 			Name:   "swagger",
 			Usage:  "generates swagger.json",
 			Action: action.Generator,
