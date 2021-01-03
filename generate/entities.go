@@ -21,6 +21,8 @@ var (
 	swaggerMapTypes = map[string]reflect.Kind{
 		"string":   reflect.String,
 		"int":      reflect.Int,
+		"int32":    reflect.Int,
+		"int64":    reflect.Int64,
 		"[]string": reflect.Slice,
 		"bool":     reflect.Bool,
 		"struct":   reflect.Struct,

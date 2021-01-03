@@ -45,21 +45,20 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 			parameters := swaggerParametersObject{}
 
 			reqRef := fmt.Sprintf("#/definitions/%s", route.RequestType.Name)
-			if len(route.ResponseType.Name) < 1 {
-				reqRef = ""
-			}
-			var schema = swaggerSchemaObject{
-				schemaCore: schemaCore{
-					Ref: reqRef,
-				},
+			if len(route.RequestType.Name) > 0 {
+				var schema = swaggerSchemaObject{
+					schemaCore: schemaCore{
+						Ref: reqRef,
+					},
+				}
+				parameters = append(parameters, swaggerParameterObject{
+					Name:     "body",
+					In:       "body",
+					Required: true,
+					Schema:   &schema,
+				})
 			}
 
-			parameters = append(parameters, swaggerParameterObject{
-				Name:     "body",
-				In:       "body",
-				Required: true,
-				Schema:   &schema,
-			})
 			pathItemObject, ok := paths[path]
 			if !ok {
 				pathItemObject = swaggerPathItemObject{}
@@ -186,10 +185,13 @@ func schemaOfField(member spec.Member) swaggerSchemaObject {
 	return ret
 }
 
+// https://swagger.io/specification/ Data Types
 func primitiveSchema(kind reflect.Kind, t string) (ftype, format string, ok bool) {
 	switch kind {
 	case reflect.Int:
 		return "integer", "int32", true
+	case reflect.Int64:
+		return "integer", "int64", true
 	case reflect.Bool:
 		return "boolean", "boolean", true
 	case reflect.String:

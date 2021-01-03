@@ -1,0 +1,49 @@
+info(
+    title: "小程序商城"
+    desc: "小程序商品首页"
+    version: "1.0"
+)
+
+
+type IndexResp struct {
+    NewList    []NewList    `json:"NewList"`
+    RandomList []RandomList `json:"Randomlist"`
+    BannerList []BannerList `json:"bannerlist"`
+}
+type NewList struct {
+    GoodsList
+}
+type RandomList struct {
+    GoodsList
+}
+type BannerList struct {
+    Image string `json:"image"`
+    Title string `json:"title"`
+    ID    int64    `json:"id"`
+}
+type GoodsList {
+    GoodsID         int64      `json:"goods_id"`
+    GoodsName       string   `json:"goods_name"`
+    CategoryID      int64      `json:"category_id"`
+    Images          string   `json:"images"`
+    SpecType        string   `json:"spec_type"`
+    DeductStockType string   `json:"deduct_stock_type"`
+    Content         string   `json:"content"`
+    SalesInitial    int      `json:"sales_initial"`
+    SalesActual     int      `json:"sales_actual"`
+    GoodsSort       int      `json:"goods_sort"`
+    DeliveryID      int64      `json:"delivery_id"`
+    GoodsStatus     string   `json:"goods_status"`
+    IsDelete        string   `json:"is_delete"`
+    ImageFrist      string   `json:"ImageFrist"`
+    GoodsSales      int      `json:"goods_sales"`
+}
+service index-api {
+    @doc(
+        summary: "首页列表"
+    )
+    @server(
+        handler: IndexHandler
+    )
+    get /index/index  returns (IndexResp)
+}

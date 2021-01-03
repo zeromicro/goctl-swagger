@@ -76,4 +76,3 @@ service user-api {
     @handler ping
     get /user/ping
 }
-//goctl api plugin -plugin goctl-swagger -api user.api -dir .
