@@ -109,7 +109,13 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 					},
 				},
 			}
-			operationObject.OperationID = fmt.Sprintf("%s", route.Path)
+
+			// get OperationID
+			for _, annotation := range route.Annotations {
+				if annotation.Name == "handler" {
+					operationObject.OperationID = annotation.Value
+				}
+			}
 
 			for _, param := range operationObject.Parameters {
 				if param.Schema != nil && param.Schema.Ref != "" {
