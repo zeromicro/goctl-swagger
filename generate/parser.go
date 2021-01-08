@@ -1,12 +1,18 @@
 package generate
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/tal-tech/go-zero/tools/goctl/api/spec"
 	"net/http"
 	"reflect"
 	"strconv"
 	"strings"
+	"unsafe"
+)
+
+var (
+	strColon = []byte(":")
 )
 
 func applyGenerate(p Plugin) (*swaggerObject, error) {
@@ -37,12 +43,24 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 	for _, group := range groups {
 
 		for _, route := range group.Routes {
-
 			path := route.Path
-			if strings.Contains(path, "/:") {
-
-			}
 			parameters := swaggerParametersObject{}
+			if countParams(path) > 0 {
+				p := strings.Split(path, "/")
+				for i := range p {
+					part := p[i]
+					if strings.Contains(part, ":") {
+						key := strings.TrimPrefix(p[i], ":")
+						path = strings.Replace(path, fmt.Sprintf(":%s", key), fmt.Sprintf("{%s}", key), 1)
+						parameters = append(parameters, swaggerParameterObject{
+							Name:     key,
+							In:       "path",
+							Required: true,
+							Type:     "string",
+						})
+					}
+				}
+			}
 
 			reqRef := fmt.Sprintf("#/definitions/%s", route.RequestType.Name)
 			if len(route.RequestType.Name) > 0 {
@@ -63,6 +81,7 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 			if !ok {
 				pathItemObject = swaggerPathItemObject{}
 			}
+
 			desc := "A successful response."
 			respRef := fmt.Sprintf("#/definitions/%s", route.ResponseType.Name)
 			if len(route.ResponseType.Name) < 1 {
@@ -132,6 +151,9 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 		for _, member := range i2.Members {
 			kv := keyVal{Value: schemaOfField(member)}
 			kv.Key = member.Name
+			if tag, err := member.GetPropertyName(); err == nil {
+				kv.Key = tag
+			}
 			if schema.Properties == nil {
 				schema.Properties = &swaggerSchemaObjectProperties{}
 			}
@@ -151,7 +173,7 @@ func schemaOfField(member spec.Member) swaggerSchemaObject {
 	var props *swaggerSchemaObjectProperties
 
 	switch ft := kind; ft {
-	case reflect.Invalid:
+	case reflect.Invalid: //[]Struct 也有可能是 Struct
 		// []Struct
 		refTypeName := strings.Replace(member.Type, "[", "", 1)
 		refTypeName = strings.Replace(refTypeName, "]", "", 1)
@@ -168,12 +190,28 @@ func schemaOfField(member spec.Member) swaggerSchemaObject {
 	}
 
 	switch ft := kind; ft {
-	case reflect.Slice, reflect.Invalid:
+	case reflect.Slice:
 		ret = swaggerSchemaObject{
 			schemaCore: schemaCore{
 				Type:  "array",
 				Items: (*swaggerItemsObject)(&core),
 			},
+		}
+	case reflect.Invalid:
+		// 判断是否数组
+		if strings.HasPrefix(member.Type, "[]") {
+			ret = swaggerSchemaObject{
+				schemaCore: schemaCore{
+					Type:  "array",
+					Items: (*swaggerItemsObject)(&core),
+				},
+			}
+		} else {
+
+			ret = swaggerSchemaObject{
+				schemaCore: core,
+				Properties: props,
+			}
 		}
 	default:
 		ret = swaggerSchemaObject{
@@ -201,4 +239,21 @@ func primitiveSchema(kind reflect.Kind, t string) (ftype, format string, ok bool
 	default:
 		return "", "", false
 	}
+}
+
+// StringToBytes converts string to byte slice without a memory allocation.
+func stringToBytes(s string) (b []byte) {
+	return *(*[]byte)(unsafe.Pointer(
+		&struct {
+			string
+			Cap int
+		}{s, len(s)},
+	))
+}
+
+func countParams(path string) uint16 {
+	var n uint16
+	s := stringToBytes(path)
+	n += uint16(bytes.Count(s, strColon))
+	return n
 }

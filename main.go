@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/urfave/cli/v2"
 	"github.com/zeromicro/goctl-swagger/action"
-
 	"os"
 	"runtime"
 )
@@ -22,6 +21,7 @@ var (
 )
 
 func main() {
+
 	app := cli.NewApp()
 	app.Usage = "a plugin of goctl to generate swagger.json"
 	app.Version = fmt.Sprintf("%s %s/%s", version, runtime.GOOS, runtime.GOARCH)
