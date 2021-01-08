@@ -31,6 +31,14 @@ func applyGenerate(p Plugin) (*swaggerObject, error) {
 		},
 	}
 
+	s.SecurityDefinitions = swaggerSecurityDefinitionsObject{}
+	newSecDefValue := swaggerSecuritySchemeObject{}
+	newSecDefValue.Name = "Authorization"
+	newSecDefValue.Description = "Enter JWT Bearer token **_only_**"
+	newSecDefValue.Type = "apiKey"
+	newSecDefValue.In = "header"
+	s.SecurityDefinitions["apiKey"] = newSecDefValue
+
 	requestResponseRefs := refMap{}
 	renderServiceRoutes(p.Api.Service, p.Api.Service.Groups, s.Paths, requestResponseRefs)
 	m := messageMap{}
@@ -110,7 +118,7 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 				},
 			}
 
-			// get OperationID
+			// set OperationID
 			for _, annotation := range route.Annotations {
 				if annotation.Name == "handler" {
 					operationObject.OperationID = annotation.Value
