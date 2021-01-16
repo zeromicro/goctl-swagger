@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	plugin2 "github.com/tal-tech/go-zero/tools/goctl/plugin"
 	"io/ioutil"
 )
 
-func Do(in Plugin) error {
+func Do(filename string, in *plugin2.Plugin) error {
 
 	swagger, err := applyGenerate(in)
 	if err != nil {
@@ -21,7 +22,7 @@ func Do(in Plugin) error {
 
 	}
 
-	output := in.Dir + "/" + in.FileName
+	output := in.Dir + "/" + filename
 
 	err = ioutil.WriteFile(output, formatted.Bytes(), 0666)
 

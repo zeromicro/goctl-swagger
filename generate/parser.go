@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/tal-tech/go-zero/tools/goctl/api/spec"
+	plugin2 "github.com/tal-tech/go-zero/tools/goctl/plugin"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -25,7 +26,10 @@ const (
 	equalToken      = "="
 )
 
-func applyGenerate(p Plugin) (*swaggerObject, error) {
+func applyGenerate(p *plugin2.Plugin) (*swaggerObject, error) {
+
+	title, _ := strconv.Unquote(p.Api.Info.Properties["title"])
+	version, _ := strconv.Unquote(p.Api.Info.Properties["version"])
 
 	s := swaggerObject{
 		Swagger:           "2.0",
@@ -36,8 +40,8 @@ func applyGenerate(p Plugin) (*swaggerObject, error) {
 		Definitions:       make(swaggerDefinitionsObject),
 		StreamDefinitions: make(swaggerDefinitionsObject),
 		Info: swaggerInfoObject{
-			Title:   p.Api.Info.Title,
-			Version: p.Api.Info.Version,
+			Title:   title,
+			Version: version,
 		},
 	}
 
@@ -52,6 +56,7 @@ func applyGenerate(p Plugin) (*swaggerObject, error) {
 	requestResponseRefs := refMap{}
 	renderServiceRoutes(p.Api.Service, p.Api.Service.Groups, s.Paths, requestResponseRefs)
 	m := messageMap{}
+
 	renderReplyAsDefinition(s.Definitions, m, p.Api.Types, requestResponseRefs)
 
 	return &s, nil
@@ -80,14 +85,17 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 					}
 				}
 			}
+			defineStruct, _ := route.RequestType.(spec.DefineStruct)
 
 			if strings.ToUpper(route.Method) == http.MethodGet {
-				for _, member := range route.RequestType.Members {
+
+				for _, member := range defineStruct.Members {
 					if strings.Contains(member.Tag, "path") {
 						continue
 					}
-					tempKind := swaggerMapTypes[strings.Replace(member.Type, "[]", "", -1)]
-					ftype, format, ok := primitiveSchema(tempKind, member.Type)
+
+					tempKind := swaggerMapTypes[strings.Replace(member.Type.Name(), "[]", "", -1)]
+					ftype, format, ok := primitiveSchema(tempKind, member.Type.Name())
 					if !ok {
 						ftype = tempKind.String()
 						format = "UNKNOWN"
@@ -115,8 +123,9 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 				}
 
 			} else {
-				reqRef := fmt.Sprintf("#/definitions/%s", route.RequestType.Name)
-				if len(route.RequestType.Name) > 0 {
+				reqRef := fmt.Sprintf("#/definitions/%s", route.RequestType.Name())
+
+				if len(route.RequestType.Name()) > 0 {
 					var schema = swaggerSchemaObject{
 						schemaCore: schemaCore{
 							Ref: reqRef,
@@ -137,16 +146,16 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 			}
 
 			desc := "A successful response."
-			respRef := fmt.Sprintf("#/definitions/%s", route.ResponseType.Name)
-			if len(route.ResponseType.Name) < 1 {
+			respRef := fmt.Sprintf("#/definitions/%s", route.ResponseType.Name())
+
+			if len(route.ResponseType.Name()) < 1 {
 				respRef = ""
 			}
 
 			tags := service.Name
-			if group.Annotations != nil && len(group.Annotations) > 0 {
-				if groupName, ok := group.Annotations[0].Properties["group"]; ok {
-					tags = groupName
-				}
+
+			if value := group.GetAnnotation("group"); len(value) > 0 {
+				tags = value
 			}
 
 			operationObject := &swaggerOperationObject{
@@ -165,10 +174,8 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 			}
 
 			// set OperationID
-			for _, annotation := range route.Annotations {
-				if annotation.Name == "handler" {
-					operationObject.OperationID = annotation.Value
-				}
+			if value := route.GetAnnotation("handler"); len(value) > 0 {
+				operationObject.OperationID = value
 			}
 
 			for _, param := range operationObject.Parameters {
@@ -177,9 +184,9 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 				}
 			}
 
-			if len(route.Annotations) > 0 {
-				operationObject.Summary, _ = strconv.Unquote(route.Annotations[0].Properties["summary"])
-				operationObject.Description, _ = strconv.Unquote(route.Annotations[0].Properties["description"])
+			if len(route.Annotation.Properties) > 0 {
+				operationObject.Summary, _ = strconv.Unquote(route.GetAnnotation("summary"))
+				operationObject.Description, _ = strconv.Unquote(route.GetAnnotation("description"))
 			}
 
 			switch strings.ToUpper(route.Method) {
@@ -206,9 +213,11 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 				Type: "object",
 			},
 		}
-		schema.Title = i2.Name
+		defineStruct, _ := i2.(spec.DefineStruct)
 
-		for _, member := range i2.Members {
+		schema.Title = defineStruct.Name()
+
+		for _, member := range defineStruct.Members {
 			kv := keyVal{Value: schemaOfField(member)}
 			kv.Key = member.Name
 			if tag, err := member.GetPropertyName(); err == nil {
@@ -237,7 +246,7 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 			}
 		}
 
-		d[i2.Name] = schema
+		d[i2.Name()] = schema
 	}
 
 }
@@ -247,7 +256,7 @@ func schemaOfField(member spec.Member) swaggerSchemaObject {
 
 	var core schemaCore
 	//spew.Dump(member)
-	kind := swaggerMapTypes[member.Type]
+	kind := swaggerMapTypes[member.Type.Name()]
 	var props *swaggerSchemaObjectProperties
 
 	comment := member.GetComment()
@@ -257,15 +266,15 @@ func schemaOfField(member spec.Member) swaggerSchemaObject {
 	case reflect.Invalid: //[]Struct 也有可能是 Struct
 		// []Struct
 		//map[ArrayType:map[Star:map[StringExpr:UserSearchReq] StringExpr:*UserSearchReq] StringExpr:[]*UserSearchReq]
-		refTypeName := strings.Replace(member.Type, "[", "", 1)
+		refTypeName := strings.Replace(member.Type.Name(), "[", "", 1)
 		refTypeName = strings.Replace(refTypeName, "]", "", 1)
 		refTypeName = strings.Replace(refTypeName, "*", "", 1)
 		core = schemaCore{
 			Ref: "#/definitions/" + refTypeName,
 		}
 	case reflect.Slice:
-		tempKind := swaggerMapTypes[strings.Replace(member.Type, "[]", "", -1)]
-		ftype, format, ok := primitiveSchema(tempKind, member.Type)
+		tempKind := swaggerMapTypes[strings.Replace(member.Type.Name(), "[]", "", -1)]
+		ftype, format, ok := primitiveSchema(tempKind, member.Type.Name())
 
 		if ok {
 			core = schemaCore{Type: ftype, Format: format}
@@ -273,7 +282,7 @@ func schemaOfField(member spec.Member) swaggerSchemaObject {
 			core = schemaCore{Type: ft.String(), Format: "UNKNOWN"}
 		}
 	default:
-		ftype, format, ok := primitiveSchema(ft, member.Type)
+		ftype, format, ok := primitiveSchema(ft, member.Type.Name())
 		if ok {
 			core = schemaCore{Type: ftype, Format: format}
 		} else {
@@ -291,7 +300,7 @@ func schemaOfField(member spec.Member) swaggerSchemaObject {
 		}
 	case reflect.Invalid:
 		// 判断是否数组
-		if strings.HasPrefix(member.Type, "[]") {
+		if strings.HasPrefix(member.Type.Name(), "[]") {
 			ret = swaggerSchemaObject{
 				schemaCore: schemaCore{
 					Type:  "array",

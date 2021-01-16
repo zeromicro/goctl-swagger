@@ -4,18 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway/descriptor"
-	"github.com/tal-tech/go-zero/tools/goctl/api/spec"
 	"reflect"
-)
-
-type (
-	Plugin struct {
-		Api           *spec.ApiSpec
-		Style         string
-		Dir           string
-		ParentPackage string
-		FileName      string
-	}
 )
 
 var (
