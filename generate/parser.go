@@ -15,6 +15,16 @@ var (
 	strColon = []byte(":")
 )
 
+const (
+	defaultOption   = "default"
+	stringOption    = "string"
+	optionalOption  = "optional"
+	optionsOption   = "options"
+	rangeOption     = "range"
+	optionSeparator = "|"
+	equalToken      = "="
+)
+
 func applyGenerate(p Plugin) (*swaggerObject, error) {
 
 	s := swaggerObject{
@@ -43,6 +53,7 @@ func applyGenerate(p Plugin) (*swaggerObject, error) {
 	renderServiceRoutes(p.Api.Service, p.Api.Service.Groups, s.Paths, requestResponseRefs)
 	m := messageMap{}
 	renderReplyAsDefinition(s.Definitions, m, p.Api.Types, requestResponseRefs)
+
 	return &s, nil
 }
 
@@ -70,19 +81,54 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 				}
 			}
 
-			reqRef := fmt.Sprintf("#/definitions/%s", route.RequestType.Name)
-			if len(route.RequestType.Name) > 0 {
-				var schema = swaggerSchemaObject{
-					schemaCore: schemaCore{
-						Ref: reqRef,
-					},
+			if strings.ToUpper(route.Method) == http.MethodGet {
+				for _, member := range route.RequestType.Members {
+					if strings.Contains(member.Tag, "path") {
+						continue
+					}
+					tempKind := swaggerMapTypes[strings.Replace(member.Type, "[]", "", -1)]
+					ftype, format, ok := primitiveSchema(tempKind, member.Type)
+					if !ok {
+						ftype = tempKind.String()
+						format = "UNKNOWN"
+					}
+					sp := swaggerParameterObject{In: "query", Type: ftype, Format: format}
+
+					for _, tag := range member.Tags() {
+						sp.Name = tag.Name
+						if len(tag.Options) == 0 {
+							sp.Required = true
+							continue
+						}
+						for _, option := range tag.Options {
+							if strings.HasPrefix(option, defaultOption) {
+								segs := strings.Split(option, equalToken)
+								if len(segs) == 2 {
+									sp.Default = segs[1]
+								}
+							} else if !strings.HasPrefix(option, optionalOption) {
+								sp.Required = true
+							}
+						}
+					}
+					parameters = append(parameters, sp)
 				}
-				parameters = append(parameters, swaggerParameterObject{
-					Name:     "body",
-					In:       "body",
-					Required: true,
-					Schema:   &schema,
-				})
+
+			} else {
+				reqRef := fmt.Sprintf("#/definitions/%s", route.RequestType.Name)
+				if len(route.RequestType.Name) > 0 {
+					var schema = swaggerSchemaObject{
+						schemaCore: schemaCore{
+							Ref: reqRef,
+						},
+					}
+					parameters = append(parameters, swaggerParameterObject{
+						Name:     "body",
+						In:       "body",
+						Required: true,
+						Schema:   &schema,
+					})
+				}
 			}
 
 			pathItemObject, ok := paths[path]
@@ -172,7 +218,25 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 				schema.Properties = &swaggerSchemaObjectProperties{}
 			}
 			*schema.Properties = append(*schema.Properties, kv)
+
+			for _, tag := range member.Tags() {
+				if len(tag.Options) == 0 {
+					schema.Required = append(schema.Required, tag.Name)
+					continue
+				}
+				for _, option := range tag.Options {
+					switch {
+					case !strings.HasPrefix(option, optionalOption):
+						if !contains(schema.Required, tag.Name) {
+							schema.Required = append(schema.Required, tag.Name)
+						}
+					case strings.HasPrefix(option, defaultOption):
+					case strings.HasPrefix(option, optionsOption):
+					}
+				}
+			}
 		}
+
 		d[i2.Name] = schema
 	}
 
@@ -182,17 +246,31 @@ func schemaOfField(member spec.Member) swaggerSchemaObject {
 	ret := swaggerSchemaObject{}
 
 	var core schemaCore
-
+	//spew.Dump(member)
 	kind := swaggerMapTypes[member.Type]
 	var props *swaggerSchemaObjectProperties
+
+	comment := member.GetComment()
+	comment = strings.Replace(comment, "//", "", -1)
 
 	switch ft := kind; ft {
 	case reflect.Invalid: //[]Struct 也有可能是 Struct
 		// []Struct
+		//map[ArrayType:map[Star:map[StringExpr:UserSearchReq] StringExpr:*UserSearchReq] StringExpr:[]*UserSearchReq]
 		refTypeName := strings.Replace(member.Type, "[", "", 1)
 		refTypeName = strings.Replace(refTypeName, "]", "", 1)
+		refTypeName = strings.Replace(refTypeName, "*", "", 1)
 		core = schemaCore{
 			Ref: "#/definitions/" + refTypeName,
+		}
+	case reflect.Slice:
+		tempKind := swaggerMapTypes[strings.Replace(member.Type, "[]", "", -1)]
+		ftype, format, ok := primitiveSchema(tempKind, member.Type)
+
+		if ok {
+			core = schemaCore{Type: ftype, Format: format}
+		} else {
+			core = schemaCore{Type: ft.String(), Format: "UNKNOWN"}
 		}
 	default:
 		ftype, format, ok := primitiveSchema(ft, member.Type)
@@ -221,7 +299,6 @@ func schemaOfField(member spec.Member) swaggerSchemaObject {
 				},
 			}
 		} else {
-
 			ret = swaggerSchemaObject{
 				schemaCore: core,
 				Properties: props,
@@ -231,6 +308,24 @@ func schemaOfField(member spec.Member) swaggerSchemaObject {
 		ret = swaggerSchemaObject{
 			schemaCore: core,
 			Properties: props,
+		}
+	}
+	ret.Description = comment
+
+	for _, tag := range member.Tags() {
+		if len(tag.Options) == 0 {
+			continue
+		}
+		for _, option := range tag.Options {
+			switch {
+			case strings.HasPrefix(option, defaultOption):
+				segs := strings.Split(option, equalToken)
+				if len(segs) == 2 {
+					ret.Default = segs[1]
+				}
+			case strings.HasPrefix(option, optionsOption):
+
+			}
 		}
 	}
 
@@ -270,4 +365,13 @@ func countParams(path string) uint16 {
 	s := stringToBytes(path)
 	n += uint16(bytes.Count(s, strColon))
 	return n
+}
+func contains(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+
+	return false
 }

@@ -14,6 +14,7 @@ type (
 		Style         string
 		Dir           string
 		ParentPackage string
+		FileName      string
 	}
 )
 
@@ -24,6 +25,9 @@ var (
 		"int32":    reflect.Int,
 		"int64":    reflect.Int64,
 		"[]string": reflect.Slice,
+		"[]int":    reflect.Slice,
+		"[]int64":  reflect.Slice,
+		"[]int32":  reflect.Slice,
 		"bool":     reflect.Bool,
 		"struct":   reflect.Struct,
 	}
@@ -153,7 +157,6 @@ type schemaCore struct {
 	Example json.RawMessage `json:"example,omitempty"`
 
 	Items *swaggerItemsObject `json:"items,omitempty"`
-
 	// If the item is an enumeration include a list of all the *NAMES* of the
 	// enum values.  I'm not sure how well this will work but assuming all enums
 	// start from 0 index it will be great. I don't think that is a good assumption.

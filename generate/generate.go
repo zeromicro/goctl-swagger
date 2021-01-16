@@ -21,7 +21,7 @@ func Do(in Plugin) error {
 
 	}
 
-	output := in.Dir + "/rest.swagger.json"
+	output := in.Dir + "/" + in.FileName
 
 	err = ioutil.WriteFile(output, formatted.Bytes(), 0666)
 

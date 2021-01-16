@@ -15,7 +15,12 @@ var (
 			Name:   "swagger",
 			Usage:  "generates swagger.json",
 			Action: action.Generator,
-			Flags:  []cli.Flag{},
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:  "filename",
+					Usage: "swagger save file name",
+				},
+			},
 		},
 	}
 )

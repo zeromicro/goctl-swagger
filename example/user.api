@@ -14,13 +14,13 @@ type (
     }
     // 登录请求
     LoginReq {
-        // 用户名
         Username string `json:"username" desc:"用户名"`
         Password string `json:"password"` //密码
     } // 登录请求
 
     UserInfoReq {
-        Id string `path:"id"`
+        Id string `path:"id"` // 会员ID
+        Page string `form:"page,default=1"` //分页
     }
 
     UserInfoReply {
@@ -36,7 +36,8 @@ type (
     }
 
     UserSearchReply {
-        KeyWord []UserInfoReply
+        KeyWord []*UserInfoReply
+        KeyWords []*UserSearchReq
     }
 )
 

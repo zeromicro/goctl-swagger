@@ -1,3 +1,3 @@
 package example
 
-//go:generate goctl api plugin -plugin goctl-swagger="swagger" -api user.api -dir .
+//go:generate goctl api plugin -plugin goctl-swagger="swagger -filename user.json" -api user.api -dir .
