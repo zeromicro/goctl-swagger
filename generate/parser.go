@@ -85,58 +85,57 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 					}
 				}
 			}
-			defineStruct, _ := route.RequestType.(spec.DefineStruct)
-
-			if strings.ToUpper(route.Method) == http.MethodGet {
-
-				for _, member := range defineStruct.Members {
-					if strings.Contains(member.Tag, "path") {
-						continue
-					}
-
-					tempKind := swaggerMapTypes[strings.Replace(member.Type.Name(), "[]", "", -1)]
-					ftype, format, ok := primitiveSchema(tempKind, member.Type.Name())
-					if !ok {
-						ftype = tempKind.String()
-						format = "UNKNOWN"
-					}
-					sp := swaggerParameterObject{In: "query", Type: ftype, Format: format}
-
-					for _, tag := range member.Tags() {
-						sp.Name = tag.Name
-						if len(tag.Options) == 0 {
-							sp.Required = true
+			if defineStruct, ok := route.RequestType.(spec.DefineStruct); ok {
+				if strings.ToUpper(route.Method) == http.MethodGet {
+					for _, member := range defineStruct.Members {
+						if strings.Contains(member.Tag, "path") {
 							continue
 						}
-						for _, option := range tag.Options {
-							if strings.HasPrefix(option, defaultOption) {
-								segs := strings.Split(option, equalToken)
-								if len(segs) == 2 {
-									sp.Default = segs[1]
-								}
-							} else if !strings.HasPrefix(option, optionalOption) {
+						tempKind := swaggerMapTypes[strings.Replace(member.Type.Name(), "[]", "", -1)]
+						ftype, format, ok := primitiveSchema(tempKind, member.Type.Name())
+						if !ok {
+							ftype = tempKind.String()
+							format = "UNKNOWN"
+						}
+						sp := swaggerParameterObject{In: "query", Type: ftype, Format: format}
+
+						for _, tag := range member.Tags() {
+							sp.Name = tag.Name
+							if len(tag.Options) == 0 {
 								sp.Required = true
+								continue
+							}
+							for _, option := range tag.Options {
+								if strings.HasPrefix(option, defaultOption) {
+									segs := strings.Split(option, equalToken)
+									if len(segs) == 2 {
+										sp.Default = segs[1]
+									}
+								} else if !strings.HasPrefix(option, optionalOption) {
+									sp.Required = true
+								}
 							}
 						}
+						parameters = append(parameters, sp)
 					}
-					parameters = append(parameters, sp)
-				}
 
-			} else {
-				reqRef := fmt.Sprintf("#/definitions/%s", route.RequestType.Name())
+				} else {
 
-				if len(route.RequestType.Name()) > 0 {
-					var schema = swaggerSchemaObject{
-						schemaCore: schemaCore{
-							Ref: reqRef,
-						},
+					reqRef := fmt.Sprintf("#/definitions/%s", route.RequestType.Name())
+
+					if len(route.RequestType.Name()) > 0 {
+						var schema = swaggerSchemaObject{
+							schemaCore: schemaCore{
+								Ref: reqRef,
+							},
+						}
+						parameters = append(parameters, swaggerParameterObject{
+							Name:     "body",
+							In:       "body",
+							Required: true,
+							Schema:   &schema,
+						})
 					}
-					parameters = append(parameters, swaggerParameterObject{
-						Name:     "body",
-						In:       "body",
-						Required: true,
-						Schema:   &schema,
-					})
 				}
 			}
 
@@ -146,18 +145,14 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 			}
 
 			desc := "A successful response."
-			respRef := fmt.Sprintf("#/definitions/%s", route.ResponseType.Name())
-
-			if len(route.ResponseType.Name()) < 1 {
-				respRef = ""
+			respRef := ""
+			if route.ResponseType != nil && len(route.ResponseType.Name()) > 0 {
+				respRef = fmt.Sprintf("#/definitions/%s", route.ResponseType.Name())
 			}
-
 			tags := service.Name
-
 			if value := group.GetAnnotation("group"); len(value) > 0 {
 				tags = value
 			}
-
 			operationObject := &swaggerOperationObject{
 				Tags:       []string{tags},
 				Parameters: parameters,

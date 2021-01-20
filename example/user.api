@@ -6,21 +6,21 @@ info(
     version: "type version here"
 )
 
+
 type (
     RegisterReq {
         Username string `json:"username"`
         Password string `json:"password"`
         Mobile string `json:"mobile"`
     }
-    // 登录请求
+
     LoginReq {
-        Username string `json:"username" desc:"用户名"`
-        Password string `json:"password"` //密码
-    } // 登录请求
+        Username string `json:"username"`
+        Password string `json:"password"`
+    }
 
     UserInfoReq {
-        Id string `path:"id"` // 会员ID
-        Page string `form:"page,default=1"` //分页
+        Id string `path:"id"`
     }
 
     UserInfoReply {
@@ -34,17 +34,11 @@ type (
     UserSearchReq {
         KeyWord string `form:"keyWord"`
     }
-
-    UserSearchReply {
-        KeyWord []*UserInfoReply
-        KeyWords []*UserSearchReq
-    }
 )
 
 service user-api {
     @doc(
         summary: "注册"
-        description: "注册一个用户"
     )
     @handler register
     post /api/user/register (RegisterReq)
@@ -65,15 +59,5 @@ service user-api {
         summary: "用户搜索"
     )
     @handler searchUser
-    get /api/user/search (UserSearchReq) returns (UserSearchReply)
-}
-
-@server(
-    jwt: Auth
-    group: greet
-    middleware: LogHandler
-)
-service user-api {
-    @handler ping
-    get /user/ping
+    get /api/user/search (UserSearchReq) returns (UserInfoReply)
 }
