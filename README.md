@@ -81,3 +81,14 @@ $ GO111MODULE=on GOPROXY=https://goproxy.cn/,direct go get -u github.com/zeromic
     ```shell script
     $ goctl api plugin -plugin goctl-swagger="swagger -filename user.json" -api user.api -dir .
     ```
+* swagger ui 查看生成的文档
+    ```shell script
+     $ docker run --rm -p 8083:8080 -e SWAGGER_JSON=/foo/user.json -v $PWD:/foo swaggerapi/swagger-ui
+   ```
+* Swagger Codegen 生成客户端调用代码
+  ```shell script
+  $ docker run --rm -v "$(pwd):/go-work" swaggerapi/swagger-codegen-cli generate \
+    -i "/go-work/user.json" \
+    -l "$l" \
+    -o "/go-work/clients/$l"
+   ```
