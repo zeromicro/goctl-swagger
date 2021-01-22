@@ -85,10 +85,12 @@ $ GO111MODULE=on GOPROXY=https://goproxy.cn/,direct go get -u github.com/zeromic
     ```shell script
      $ docker run --rm -p 8083:8080 -e SWAGGER_JSON=/foo/user.json -v $PWD:/foo swaggerapi/swagger-ui
    ```
-* Swagger Codegen 生成客户端调用代码
+* Swagger Codegen 生成客户端调用代码(go,javascript,php)
   ```shell script
-  $ docker run --rm -v "$(pwd):/go-work" swaggerapi/swagger-codegen-cli generate \
-    -i "/go-work/user.json" \
-    -l "$l" \
-    -o "/go-work/clients/$l"
+  for l in go javascript php; do
+    docker run --rm -v "$(pwd):/go-work" swaggerapi/swagger-codegen-cli generate \
+      -i "/go-work/rest.swagger.json" \
+      -l "$l" \
+      -o "/go-work/clients/$l"
+  done
    ```
