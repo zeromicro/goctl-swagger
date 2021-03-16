@@ -68,8 +68,6 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 
 		for _, route := range group.Routes {
 			path := route.Path
-			fmt.Printf("path: %#v", route)
-			fmt.Println(" ")
 			parameters := swaggerParametersObject{}
 			if countParams(path) > 0 {
 				p := strings.Split(path, "/")
