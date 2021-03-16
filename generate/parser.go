@@ -68,6 +68,8 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 
 		for _, route := range group.Routes {
 			path := route.Path
+			fmt.Printf("path: %#v", route)
+			fmt.Println(" ")
 			parameters := swaggerParametersObject{}
 			if countParams(path) > 0 {
 				p := strings.Split(path, "/")
@@ -116,6 +118,12 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 								}
 							}
 						}
+
+						// add comment to description, delete '//'
+						if len(member.Comment) > 0 {
+							sp.Description = strings.TrimLeft(member.Comment, "//")
+						}
+
 						parameters = append(parameters, sp)
 					}
 
@@ -179,9 +187,9 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 				}
 			}
 
-			if len(route.Annotation.Properties) > 0 {
-				operationObject.Summary, _ = strconv.Unquote(route.GetAnnotation("summary"))
-				operationObject.Description, _ = strconv.Unquote(route.GetAnnotation("description"))
+			if len(route.AtDoc.Properties["description"]) > 0 {
+				//operationObject.Summary, _ = strconv.Unquote(route.GetAnnotation("summary"))
+				operationObject.Description, _ = strconv.Unquote(route.AtDoc.Properties["description"])
 			}
 
 			switch strings.ToUpper(route.Method) {
