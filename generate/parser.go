@@ -179,9 +179,9 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 				}
 			}
 
-			if len(route.Annotation.Properties) > 0 {
-				operationObject.Summary, _ = strconv.Unquote(route.GetAnnotation("summary"))
-				operationObject.Description, _ = strconv.Unquote(route.GetAnnotation("description"))
+			if len(route.AtDoc.Properties) > 0 {
+				operationObject.Summary, _ = strconv.Unquote(route.AtDoc.Properties["summary"])
+				operationObject.Description, _ = strconv.Unquote(route.AtDoc.Properties["description"])
 			}
 
 			switch strings.ToUpper(route.Method) {
