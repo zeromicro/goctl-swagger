@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	plugin2 "github.com/tal-tech/go-zero/tools/goctl/plugin"
 	"io/ioutil"
+
+	plugin2 "github.com/tal-tech/go-zero/tools/goctl/plugin"
 )
 
 func Do(filename string, in *plugin2.Plugin) error {
@@ -19,12 +20,14 @@ func Do(filename string, in *plugin2.Plugin) error {
 	enc.SetIndent("", "  ")
 
 	if err := enc.Encode(swagger); err != nil {
-
+		fmt.Println(err)
 	}
 
 	output := in.Dir + "/" + filename
 
 	err = ioutil.WriteFile(output, formatted.Bytes(), 0666)
-
+	if err != nil {
+		fmt.Println(err)
+	}
 	return err
 }

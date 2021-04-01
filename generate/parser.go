@@ -3,13 +3,14 @@ package generate
 import (
 	"bytes"
 	"fmt"
-	"github.com/tal-tech/go-zero/tools/goctl/api/spec"
-	plugin2 "github.com/tal-tech/go-zero/tools/goctl/plugin"
 	"net/http"
 	"reflect"
 	"strconv"
 	"strings"
 	"unsafe"
+
+	"github.com/tal-tech/go-zero/tools/goctl/api/spec"
+	plugin2 "github.com/tal-tech/go-zero/tools/goctl/plugin"
 )
 
 var (
@@ -30,6 +31,7 @@ func applyGenerate(p *plugin2.Plugin) (*swaggerObject, error) {
 
 	title, _ := strconv.Unquote(p.Api.Info.Properties["title"])
 	version, _ := strconv.Unquote(p.Api.Info.Properties["version"])
+	desc, _ := strconv.Unquote(p.Api.Info.Properties["desc"])
 
 	s := swaggerObject{
 		Swagger:           "2.0",
@@ -40,8 +42,9 @@ func applyGenerate(p *plugin2.Plugin) (*swaggerObject, error) {
 		Definitions:       make(swaggerDefinitionsObject),
 		StreamDefinitions: make(swaggerDefinitionsObject),
 		Info: swaggerInfoObject{
-			Title:   title,
-			Version: version,
+			Title:       title,
+			Version:     version,
+			Description: desc,
 		},
 	}
 
@@ -116,6 +119,11 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 								}
 							}
 						}
+
+						if len(member.Comment) > 0 {
+							sp.Description = strings.TrimLeft(member.Comment, "//")
+						}
+
 						parameters = append(parameters, sp)
 					}
 
@@ -169,18 +177,16 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 			}
 
 			// set OperationID
-			if value := route.GetAnnotation("handler"); len(value) > 0 {
-				operationObject.OperationID = value
-			}
+			operationObject.OperationID = route.Handler
 
 			for _, param := range operationObject.Parameters {
 				if param.Schema != nil && param.Schema.Ref != "" {
 					requestResponseRefs[param.Schema.Ref] = struct{}{}
 				}
 			}
+			operationObject.Summary = route.JoinedDoc()
 
 			if len(route.AtDoc.Properties) > 0 {
-				operationObject.Summary, _ = strconv.Unquote(route.AtDoc.Properties["summary"])
 				operationObject.Description, _ = strconv.Unquote(route.AtDoc.Properties["description"])
 			}
 
@@ -347,6 +353,10 @@ func primitiveSchema(kind reflect.Kind, t string) (ftype, format string, ok bool
 		return "boolean", "boolean", true
 	case reflect.String:
 		return "string", "", true
+	case reflect.Float32:
+		return "number", "float", true
+	case reflect.Float64:
+		return "number", "double", true
 	case reflect.Slice:
 		return strings.Replace(t, "[]", "", -1), "", true
 	default:

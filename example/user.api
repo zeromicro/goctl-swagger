@@ -15,8 +15,8 @@ type (
     }
 
     LoginReq {
-        Username string `json:"username"`
-        Password string `json:"password"`
+        Username string `json:"username"` //测试
+        Password string `json:"password"`//测试2
     }
 
     UserInfoReq {
@@ -32,31 +32,31 @@ type (
     }
 
     UserSearchReq {
-        KeyWord string `form:"keyWord"`
+        KeyWord string `form:"keyWord"` // 关键词
     }
 )
 
 service user-api {
     @doc(
-        summary: "注册"
+        summary: 注册
     )
     @handler register
     post /api/user/register (RegisterReq)
 
     @doc(
-        summary: "登录"
+        summary: 登录
     )
     @handler login
     post /api/user/login (LoginReq)
 
     @doc(
-        summary: "获取用户信息"
+        summary: 获取用户信息
     )
     @handler getUserInfo
     get /api/user/:id (UserInfoReq) returns (UserInfoReply)
 
     @doc(
-        summary: "用户搜索"
+        summary: 用户搜索
     )
     @handler searchUser
     get /api/user/search (UserSearchReq) returns (UserInfoReply)

@@ -3,8 +3,9 @@ package generate
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway/descriptor"
 	"reflect"
+
+	"github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway/descriptor"
 )
 
 var (
@@ -19,6 +20,8 @@ var (
 		"[]int32":  reflect.Slice,
 		"bool":     reflect.Bool,
 		"struct":   reflect.Struct,
+		"float32":  reflect.Float32,
+		"float64":  reflect.Float64,
 	}
 )
 
