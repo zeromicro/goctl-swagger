@@ -1,0 +1,75 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "type title here",
+    "description": "type desc here",
+    "version": "type version here"
+  },
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/api/user/register": {
+      "post": {
+        "summary": "注册",
+        "operationId": "register",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {}
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/RegisterReq"
+            }
+          }
+        ],
+        "tags": [
+          "user-api"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "RegisterReq": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        },
+        "mobile": {
+          "type": "string"
+        }
+      },
+      "title": "RegisterReq",
+      "required": [
+        "username",
+        "password",
+        "mobile"
+      ]
+    }
+  },
+  "securityDefinitions": {
+    "apiKey": {
+      "type": "apiKey",
+      "description": "Enter JWT Bearer token **_only_**",
+      "name": "Authorization",
+      "in": "header"
+    }
+  }
+}
