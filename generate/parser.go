@@ -184,11 +184,13 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 					requestResponseRefs[param.Schema.Ref] = struct{}{}
 				}
 			}
-			operationObject.Summary = route.JoinedDoc()
+			operationObject.Summary = strings.ReplaceAll(route.JoinedDoc(), "\"", "")
 
 			if len(route.AtDoc.Properties) > 0 {
 				operationObject.Description, _ = strconv.Unquote(route.AtDoc.Properties["description"])
 			}
+
+			operationObject.Description = strings.ReplaceAll(operationObject.Description, "\"", "")
 
 			switch strings.ToUpper(route.Method) {
 			case http.MethodGet:
