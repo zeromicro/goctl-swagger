@@ -13,9 +13,7 @@ import (
 	plugin2 "github.com/tal-tech/go-zero/tools/goctl/plugin"
 )
 
-var (
-	strColon = []byte(":")
-)
+var strColon = []byte(":")
 
 const (
 	defaultOption   = "default"
@@ -27,8 +25,7 @@ const (
 	equalToken      = "="
 )
 
-func applyGenerate(p *plugin2.Plugin) (*swaggerObject, error) {
-
+func applyGenerate(p *plugin2.Plugin, host string, basePath string) (*swaggerObject, error) {
 	title, _ := strconv.Unquote(p.Api.Info.Properties["title"])
 	version, _ := strconv.Unquote(p.Api.Info.Properties["version"])
 	desc, _ := strconv.Unquote(p.Api.Info.Properties["desc"])
@@ -46,6 +43,12 @@ func applyGenerate(p *plugin2.Plugin) (*swaggerObject, error) {
 			Version:     version,
 			Description: desc,
 		},
+	}
+	if len(host) > 0 {
+		s.Host = host
+	}
+	if len(basePath) > 0 {
+		s.BasePath = basePath
 	}
 
 	s.SecurityDefinitions = swaggerSecurityDefinitionsObject{}
@@ -66,9 +69,7 @@ func applyGenerate(p *plugin2.Plugin) (*swaggerObject, error) {
 }
 
 func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swaggerPathsObject, requestResponseRefs refMap) {
-
 	for _, group := range groups {
-
 		for _, route := range group.Routes {
 			path := route.Path
 			parameters := swaggerParametersObject{}
@@ -126,13 +127,12 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 
 						parameters = append(parameters, sp)
 					}
-
 				} else {
 
 					reqRef := fmt.Sprintf("#/definitions/%s", route.RequestType.Name())
 
 					if len(route.RequestType.Name()) > 0 {
-						var schema = swaggerSchemaObject{
+						schema := swaggerSchemaObject{
 							schemaCore: schemaCore{
 								Ref: reqRef,
 							},
@@ -204,7 +204,6 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 			paths[path] = pathItemObject
 		}
 	}
-
 }
 
 func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.Type, refs refMap) {
@@ -249,14 +248,13 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 
 		d[i2.Name()] = schema
 	}
-
 }
 
 func schemaOfField(member spec.Member) swaggerSchemaObject {
 	ret := swaggerSchemaObject{}
 
 	var core schemaCore
-	//spew.Dump(member)
+	// spew.Dump(member)
 	kind := swaggerMapTypes[member.Type.Name()]
 	var props *swaggerSchemaObjectProperties
 
@@ -266,7 +264,7 @@ func schemaOfField(member spec.Member) swaggerSchemaObject {
 	switch ft := kind; ft {
 	case reflect.Invalid: //[]Struct 也有可能是 Struct
 		// []Struct
-		//map[ArrayType:map[Star:map[StringExpr:UserSearchReq] StringExpr:*UserSearchReq] StringExpr:[]*UserSearchReq]
+		// map[ArrayType:map[Star:map[StringExpr:UserSearchReq] StringExpr:*UserSearchReq] StringExpr:[]*UserSearchReq]
 		refTypeName := strings.Replace(member.Type.Name(), "[", "", 1)
 		refTypeName = strings.Replace(refTypeName, "]", "", 1)
 		refTypeName = strings.Replace(refTypeName, "*", "", 1)
@@ -380,6 +378,7 @@ func countParams(path string) uint16 {
 	n += uint16(bytes.Count(s, strColon))
 	return n
 }
+
 func contains(s []string, str string) bool {
 	for _, v := range s {
 		if v == str {

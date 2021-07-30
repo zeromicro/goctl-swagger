@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/urfave/cli/v2"
-	"github.com/zeromicro/goctl-swagger/action"
 	"os"
 	"runtime"
+
+	"github.com/urfave/cli/v2"
+	"github.com/zeromicro/goctl-swagger/action"
 )
 
 var (
@@ -17,6 +18,14 @@ var (
 			Action: action.Generator,
 			Flags: []cli.Flag{
 				&cli.StringFlag{
+					Name:  "host",
+					Usage: "api request address",
+				},
+				&cli.StringFlag{
+					Name:  "basepath",
+					Usage: "url request prefix",
+				},
+				&cli.StringFlag{
 					Name:  "filename",
 					Usage: "swagger save file name",
 				},
@@ -26,7 +35,6 @@ var (
 )
 
 func main() {
-
 	app := cli.NewApp()
 	app.Usage = "a plugin of goctl to generate swagger.json"
 	app.Version = fmt.Sprintf("%s %s/%s", version, runtime.GOOS, runtime.GOARCH)

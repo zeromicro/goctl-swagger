@@ -7,7 +7,6 @@ import (
 )
 
 func Generator(ctx *cli.Context) error {
-
 	fileName := ctx.String("filename")
 
 	if len(fileName) == 0 {
@@ -18,5 +17,7 @@ func Generator(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	return generate.Do(fileName, p)
+	basepath := ctx.String("basepath")
+	host := ctx.String("host")
+	return generate.Do(fileName, host, basepath, p)
 }
