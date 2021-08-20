@@ -16,6 +16,31 @@
     "application/json"
   ],
   "paths": {
+    "/api/user/login": {
+      "post": {
+        "summary": "登录",
+        "operationId": "login",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {}
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/LoginReq"
+            }
+          }
+        ],
+        "tags": [
+          "user-api"
+        ]
+      }
+    },
     "/api/user/register": {
       "post": {
         "summary": "注册",
@@ -40,9 +65,78 @@
           "user-api"
         ]
       }
+    },
+    "/api/user/search": {
+      "get": {
+        "summary": "用户搜索",
+        "operationId": "searchUser",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/UserInfoReply"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "keyWord",
+            "description": " 关键词",
+            "in": "query",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "user-api"
+        ]
+      }
+    },
+    "/api/user/{id}": {
+      "get": {
+        "summary": "获取用户信息",
+        "operationId": "getUserInfo",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/UserInfoReply"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "user-api"
+        ]
+      }
     }
   },
   "definitions": {
+    "LoginReq": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string",
+          "description": "测试"
+        },
+        "password": {
+          "type": "string",
+          "description": "测试2"
+        }
+      },
+      "title": "LoginReq",
+      "required": [
+        "username",
+        "password"
+      ]
+    },
     "RegisterReq": {
       "type": "object",
       "properties": {
@@ -61,6 +155,63 @@
         "username",
         "password",
         "mobile"
+      ]
+    },
+    "UserInfoReply": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "age": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "birthday": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "title": "UserInfoReply",
+      "required": [
+        "name",
+        "age",
+        "birthday",
+        "description",
+        "tag"
+      ]
+    },
+    "UserInfoReq": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "title": "UserInfoReq",
+      "required": [
+        "id"
+      ]
+    },
+    "UserSearchReq": {
+      "type": "object",
+      "properties": {
+        "keyWord": {
+          "type": "string",
+          "description": " 关键词"
+        }
+      },
+      "title": "UserSearchReq",
+      "required": [
+        "keyWord"
       ]
     }
   },

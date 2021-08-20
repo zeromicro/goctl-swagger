@@ -232,7 +232,9 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 
 			for _, tag := range member.Tags() {
 				if len(tag.Options) == 0 {
-					schema.Required = append(schema.Required, tag.Name)
+					if !contains(schema.Required, tag.Name) && tag.Name != "required" {
+						schema.Required = append(schema.Required, tag.Name)
+					}
 					continue
 				}
 				for _, option := range tag.Options {

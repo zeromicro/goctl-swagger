@@ -18,7 +18,6 @@ type (
         Username string `json:"username"` //测试
         Password string `json:"password"`//测试2
     }
-
     UserInfoReq {
         Id string `path:"id"`
     }
