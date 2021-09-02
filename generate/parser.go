@@ -58,7 +58,9 @@ func applyGenerate(p *plugin2.Plugin, host string, basePath string) (*swaggerObj
 	newSecDefValue.Type = "apiKey"
 	newSecDefValue.In = "header"
 	s.SecurityDefinitions["apiKey"] = newSecDefValue
+	s.Security = append(s.Security, swaggerSecurityRequirementObject{"apiKey": []string{}})
 
+	
 	requestResponseRefs := refMap{}
 	renderServiceRoutes(p.Api.Service, p.Api.Service.Groups, s.Paths, requestResponseRefs)
 	m := messageMap{}
