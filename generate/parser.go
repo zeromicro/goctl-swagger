@@ -163,6 +163,9 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 			if value := group.GetAnnotation("group"); len(value) > 0 {
 				tags = value
 			}
+			if value := group.GetAnnotation("swtags"); len(value) > 0 {
+				tags = value
+			}
 			operationObject := &swaggerOperationObject{
 				Tags:       []string{tags},
 				Parameters: parameters,
