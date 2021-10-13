@@ -58,9 +58,9 @@ func applyGenerate(p *plugin2.Plugin, host string, basePath string) (*swaggerObj
 	newSecDefValue.Type = "apiKey"
 	newSecDefValue.In = "header"
 	s.SecurityDefinitions["apiKey"] = newSecDefValue
+
 	s.Security = append(s.Security, swaggerSecurityRequirementObject{"apiKey": []string{}})
 
-	
 	requestResponseRefs := refMap{}
 	renderServiceRoutes(p.Api.Service, p.Api.Service.Groups, s.Paths, requestResponseRefs)
 	m := messageMap{}
@@ -98,6 +98,7 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 							continue
 						}
 						tempKind := swaggerMapTypes[strings.Replace(member.Type.Name(), "[]", "", -1)]
+
 						ftype, format, ok := primitiveSchema(tempKind, member.Type.Name())
 						if !ok {
 							ftype = tempKind.String()
@@ -163,9 +164,11 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 			if value := group.GetAnnotation("group"); len(value) > 0 {
 				tags = value
 			}
+
 			if value := group.GetAnnotation("swtags"); len(value) > 0 {
 				tags = value
 			}
+
 			operationObject := &swaggerOperationObject{
 				Tags:       []string{tags},
 				Parameters: parameters,
@@ -263,7 +266,7 @@ func schemaOfField(member spec.Member) swaggerSchemaObject {
 	ret := swaggerSchemaObject{}
 
 	var core schemaCore
-	// spew.Dump(member)
+
 	kind := swaggerMapTypes[member.Type.Name()]
 	var props *swaggerSchemaObjectProperties
 
@@ -277,8 +280,18 @@ func schemaOfField(member spec.Member) swaggerSchemaObject {
 		refTypeName := strings.Replace(member.Type.Name(), "[", "", 1)
 		refTypeName = strings.Replace(refTypeName, "]", "", 1)
 		refTypeName = strings.Replace(refTypeName, "*", "", 1)
-		core = schemaCore{
-			Ref: "#/definitions/" + refTypeName,
+		refTypeName = strings.Replace(refTypeName, "{", "", 1)
+		refTypeName = strings.Replace(refTypeName, "}", "", 1)
+		// interface
+
+		if refTypeName == "interface" {
+			core = schemaCore{Type: "object"}
+		} else if refTypeName == "mapstringstring" {
+			core = schemaCore{Type: "object"}
+		} else {
+			core = schemaCore{
+				Ref: "#/definitions/" + refTypeName,
+			}
 		}
 	case reflect.Slice:
 		tempKind := swaggerMapTypes[strings.Replace(member.Type.Name(), "[]", "", -1)]
@@ -320,6 +333,9 @@ func schemaOfField(member spec.Member) swaggerSchemaObject {
 				schemaCore: core,
 				Properties: props,
 			}
+		}
+		if strings.HasPrefix(member.Type.Name(), "map") {
+			fmt.Println("暂不支持map类型")
 		}
 	default:
 		ret = swaggerSchemaObject{
