@@ -75,6 +75,7 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 		for _, route := range group.Routes {
 			path := route.Path
 			parameters := swaggerParametersObject{}
+
 			if countParams(path) > 0 {
 				p := strings.Split(path, "/")
 				for i := range p {
@@ -82,12 +83,34 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 					if strings.Contains(part, ":") {
 						key := strings.TrimPrefix(p[i], ":")
 						path = strings.Replace(path, fmt.Sprintf(":%s", key), fmt.Sprintf("{%s}", key), 1)
-						parameters = append(parameters, swaggerParameterObject{
+
+						spo := swaggerParameterObject{
 							Name:     key,
 							In:       "path",
 							Required: true,
 							Type:     "string",
-						})
+						}
+
+						// extend the comment functionality
+						// to allow query string parameters definitions
+						// EXAMPLE:
+						// @doc(
+						// 	summary: "Get Cart"
+						// 	description: "returns a shopping cart if one exists"
+						// 	customerId: "customer id"
+						// )
+						//
+						// the format for a parameter is
+						// paramName: "the param description"
+						//
+
+						prop := route.AtDoc.Properties[key]
+						if prop != "" {
+							// remove quotes
+							spo.Description = strings.Trim(prop, "\"")
+						}
+
+						parameters = append(parameters, spo)
 					}
 				}
 			}
@@ -251,8 +274,8 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 						if !contains(schema.Required, tag.Name) {
 							schema.Required = append(schema.Required, tag.Name)
 						}
-					case strings.HasPrefix(option, defaultOption):
-					case strings.HasPrefix(option, optionsOption):
+						// case strings.HasPrefix(option, defaultOption):
+						// case strings.HasPrefix(option, optionsOption):
 					}
 				}
 			}
