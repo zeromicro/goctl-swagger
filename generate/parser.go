@@ -9,8 +9,8 @@ import (
 	"strings"
 	"unsafe"
 
-	"github.com/tal-tech/go-zero/tools/goctl/api/spec"
-	plugin2 "github.com/tal-tech/go-zero/tools/goctl/plugin"
+	"github.com/zeromicro/go-zero/tools/goctl/api/spec"
+	plugin2 "github.com/zeromicro/go-zero/tools/goctl/plugin"
 )
 
 var strColon = []byte(":")
