@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	plugin2 "github.com/tal-tech/go-zero/tools/goctl/plugin"
+	"github.com/zeromicro/go-zero/tools/goctl/plugin"
 )
 
-func Do(filename string, host string, basePath string, in *plugin2.Plugin) error {
+func Do(filename string, host string, basePath string, in *plugin.Plugin) error {
 	swagger, err := applyGenerate(in, host, basePath)
 	if err != nil {
 		fmt.Println(err)

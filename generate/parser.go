@@ -9,8 +9,8 @@ import (
 	"strings"
 	"unsafe"
 
-	"github.com/tal-tech/go-zero/tools/goctl/api/spec"
-	plugin2 "github.com/tal-tech/go-zero/tools/goctl/plugin"
+	"github.com/zeromicro/go-zero/tools/goctl/api/spec"
+	"github.com/zeromicro/go-zero/tools/goctl/plugin"
 )
 
 var strColon = []byte(":")
@@ -25,7 +25,7 @@ const (
 	equalToken      = "="
 )
 
-func applyGenerate(p *plugin2.Plugin, host string, basePath string) (*swaggerObject, error) {
+func applyGenerate(p *plugin.Plugin, host string, basePath string) (*swaggerObject, error) {
 	title, _ := strconv.Unquote(p.Api.Info.Properties["title"])
 	version, _ := strconv.Unquote(p.Api.Info.Properties["version"])
 	desc, _ := strconv.Unquote(p.Api.Info.Properties["desc"])

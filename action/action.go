@@ -1,8 +1,8 @@
 package action
 
 import (
-	plugin2 "github.com/tal-tech/go-zero/tools/goctl/plugin"
 	"github.com/urfave/cli/v2"
+	"github.com/zeromicro/go-zero/tools/goctl/plugin"
 	"github.com/zeromicro/goctl-swagger/generate"
 )
 
@@ -13,7 +13,7 @@ func Generator(ctx *cli.Context) error {
 		fileName = "rest.swagger.json"
 	}
 
-	p, err := plugin2.NewPlugin()
+	p, err := plugin.NewPlugin()
 	if err != nil {
 		return err
 	}
