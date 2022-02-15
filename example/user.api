@@ -8,6 +8,8 @@ info(
 
 
 type (
+    
+    //注册请求结构
     RegisterReq {
         Username string `json:"username"`
         Password string `json:"password"`
@@ -35,28 +37,32 @@ type (
     }
 )
 
+@server(
+  prefix: /api
+)
+
 service user-api {
     @doc(
         summary: 注册
     )
     @handler register
-    post /api/user/register (RegisterReq)
+    post /user/register (RegisterReq)
 
     @doc(
         summary: 登录
     )
     @handler login
-    post /api/user/login (LoginReq)
+    post /user/login (LoginReq)
 
     @doc(
         summary: 获取用户信息
     )
     @handler getUserInfo
-    get /api/user/:id (UserInfoReq) returns (UserInfoReply)
+    get /user/:id (UserInfoReq) returns (UserInfoReply)
 
     @doc(
         summary: 用户搜索
     )
     @handler searchUser
-    get /api/user/search (UserSearchReq) returns (UserInfoReply)
+    get /user/search (UserSearchReq) returns (UserInfoReply)
 }

@@ -36,6 +36,7 @@
             }
           }
         ],
+        "requestBody": {},
         "tags": [
           "user-api"
         ]
@@ -54,6 +55,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "注册请求结构",
             "in": "body",
             "required": true,
             "schema": {
@@ -61,6 +63,7 @@
             }
           }
         ],
+        "requestBody": {},
         "tags": [
           "user-api"
         ]
@@ -87,6 +90,7 @@
             "type": "string"
           }
         ],
+        "requestBody": {},
         "tags": [
           "user-api"
         ]
@@ -112,6 +116,7 @@
             "type": "string"
           }
         ],
+        "requestBody": {},
         "tags": [
           "user-api"
         ]
@@ -222,5 +227,10 @@
       "name": "Authorization",
       "in": "header"
     }
-  }
+  },
+  "security": [
+    {
+      "apiKey": []
+    }
+  ]
 }

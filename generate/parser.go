@@ -73,7 +73,8 @@ func applyGenerate(p *plugin.Plugin, host string, basePath string) (*swaggerObje
 func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swaggerPathsObject, requestResponseRefs refMap) {
 	for _, group := range groups {
 		for _, route := range group.Routes {
-			path := route.Path
+
+			path := group.GetAnnotation("prefix") + route.Path
 			parameters := swaggerParametersObject{}
 
 			if countParams(path) > 0 {
@@ -163,12 +164,21 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 								Ref: reqRef,
 							},
 						}
-						parameters = append(parameters, swaggerParameterObject{
+
+						parameter := swaggerParameterObject{
 							Name:     "body",
 							In:       "body",
 							Required: true,
 							Schema:   &schema,
-						})
+						}
+						doc := strings.Join(route.RequestType.Documents(), ",")
+						doc = strings.Replace(doc, "//", "", -1)
+
+						if doc != "" {
+							parameter.Description = doc
+						}
+
+						parameters = append(parameters, parameter)
 					}
 				}
 			}
@@ -231,6 +241,8 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 			case http.MethodDelete:
 				pathItemObject.Delete = operationObject
 			case http.MethodPut:
+				pathItemObject.Put = operationObject
+			case http.MethodPatch:
 				pathItemObject.Put = operationObject
 			}
 

@@ -8,26 +8,24 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway/descriptor"
 )
 
-var (
-	swaggerMapTypes = map[string]reflect.Kind{
-		"string":   reflect.String,
-		"int":      reflect.Int,
-		"int32":    reflect.Int,
-		"uint32":   reflect.Int,
-		"uint64":   reflect.Int64,
-		"int64":    reflect.Int64,
-		"[]string": reflect.Slice,
-		"[]int":    reflect.Slice,
-		"[]int64":  reflect.Slice,
-		"[]int32":  reflect.Slice,
-		"[]uint32": reflect.Slice,
-		"[]uint64": reflect.Slice,
-		"bool":     reflect.Bool,
-		"struct":   reflect.Struct,
-		"float32":  reflect.Float32,
-		"float64":  reflect.Float64,
-	}
-)
+var swaggerMapTypes = map[string]reflect.Kind{
+	"string":   reflect.String,
+	"int":      reflect.Int,
+	"int32":    reflect.Int,
+	"uint32":   reflect.Int,
+	"uint64":   reflect.Int64,
+	"int64":    reflect.Int64,
+	"[]string": reflect.Slice,
+	"[]int":    reflect.Slice,
+	"[]int64":  reflect.Slice,
+	"[]int32":  reflect.Slice,
+	"[]uint32": reflect.Slice,
+	"[]uint64": reflect.Slice,
+	"bool":     reflect.Bool,
+	"struct":   reflect.Struct,
+	"float32":  reflect.Float32,
+	"float64":  reflect.Float64,
+}
 
 // http://swagger.io/specification/#infoObject
 type swaggerInfoObject struct {
@@ -116,14 +114,20 @@ type swaggerOperationObject struct {
 	OperationID string                  `json:"operationId"`
 	Responses   swaggerResponsesObject  `json:"responses"`
 	Parameters  swaggerParametersObject `json:"parameters,omitempty"`
-	Tags        []string                `json:"tags,omitempty"`
-	Deprecated  bool                    `json:"deprecated,omitempty"`
+	RequestBody struct {
+		Content swaggerContentObject `json:"content,omitempty"`
+	} `json:"requestBody,omitempty"`
+	Tags       []string `json:"tags,omitempty"`
+	Deprecated bool     `json:"deprecated,omitempty"`
 
 	Security     *[]swaggerSecurityRequirementObject `json:"security,omitempty"`
 	ExternalDocs *swaggerExternalDocumentationObject `json:"externalDocs,omitempty"`
 }
 
-type swaggerParametersObject []swaggerParameterObject
+type (
+	swaggerParametersObject []swaggerParameterObject
+	swaggerContentObject    map[string]swaggerParametersObject
+)
 
 // http://swagger.io/specification/#parameterObject
 type swaggerParameterObject struct {
