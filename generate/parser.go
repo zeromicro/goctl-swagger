@@ -19,6 +19,7 @@ const (
 	defaultOption   = "default"
 	stringOption    = "string"
 	optionalOption  = "optional"
+	omitemptyOption = "omitempty"
 	optionsOption   = "options"
 	rangeOption     = "range"
 	optionSeparator = "|"
@@ -142,8 +143,8 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 									if len(segs) == 2 {
 										sp.Default = segs[1]
 									}
-								} else if !strings.HasPrefix(option, optionalOption) {
-									sp.Required = true
+								} else if strings.HasPrefix(option, optionalOption) || strings.HasPrefix(option, omitemptyOption) {
+									sp.Required = false
 								}
 							}
 						}
@@ -274,21 +275,17 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 			*schema.Properties = append(*schema.Properties, kv)
 
 			for _, tag := range member.Tags() {
-				if len(tag.Options) == 0 {
-					if !contains(schema.Required, tag.Name) && tag.Name != "required" {
-						schema.Required = append(schema.Required, tag.Name)
-					}
-					continue
-				}
+				required := true
 				for _, option := range tag.Options {
 					switch {
-					case !strings.HasPrefix(option, optionalOption):
-						if !contains(schema.Required, tag.Name) {
-							schema.Required = append(schema.Required, tag.Name)
-						}
+					case strings.HasPrefix(option, optionalOption) || strings.HasPrefix(option, omitemptyOption):
+						required = false
 						// case strings.HasPrefix(option, defaultOption):
 						// case strings.HasPrefix(option, optionsOption):
 					}
+				}
+				if required && !contains(schema.Required, tag.Name) {
+					schema.Required = append(schema.Required, tag.Name)
 				}
 			}
 		}
