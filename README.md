@@ -1,13 +1,14 @@
 # goctl-swagger
 
-### 1. 编译goctl-swagger插件
+### 1. 安装goctl-swagger插件
 
 ```
-$ GO111MODULE=on GOPROXY=https://goproxy.cn/,direct go get -u github.com/zeromicro/goctl-swagger
+$ GO111MODULE=on GOPROXY=https://goproxy.cn/,direct go install github.com/zeromicro/goctl-swagger@latest
 ```
 
 ### 2. 配置环境
-将$GOPATH/bin中的goctl-swagger添加到环境变量
+
+将$GOPATH/bin添加到环境变量, 确保 `which goctl-swagger` 有输出
 
 ### 3. 使用姿势
 
