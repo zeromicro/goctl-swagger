@@ -114,7 +114,7 @@ type swaggerOperationObject struct {
 	OperationID string                  `json:"operationId"`
 	Responses   swaggerResponsesObject  `json:"responses"`
 	Parameters  swaggerParametersObject `json:"parameters,omitempty"`
-	RequestBody struct {
+	RequestBody *struct {
 		Content swaggerContentObject `json:"content,omitempty"`
 	} `json:"requestBody,omitempty"`
 	Tags       []string `json:"tags,omitempty"`
