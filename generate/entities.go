@@ -10,11 +10,17 @@ import (
 
 var swaggerMapTypes = map[string]reflect.Kind{
 	"string":   reflect.String,
+	"*string":  reflect.String,
 	"int":      reflect.Int,
+	"*int":     reflect.Int,
 	"int32":    reflect.Int,
+	"*int32":   reflect.Int,
 	"uint32":   reflect.Int,
+	"*uint32":  reflect.Int,
 	"uint64":   reflect.Int64,
+	"*uint64":  reflect.Int64,
 	"int64":    reflect.Int64,
+	"*int64":   reflect.Int64,
 	"[]string": reflect.Slice,
 	"[]int":    reflect.Slice,
 	"[]int64":  reflect.Slice,
@@ -22,9 +28,13 @@ var swaggerMapTypes = map[string]reflect.Kind{
 	"[]uint32": reflect.Slice,
 	"[]uint64": reflect.Slice,
 	"bool":     reflect.Bool,
+	"*bool":    reflect.Bool,
 	"struct":   reflect.Struct,
+	"*struct":  reflect.Struct,
 	"float32":  reflect.Float32,
+	"*float32": reflect.Float32,
 	"float64":  reflect.Float64,
+	"*float64": reflect.Float64,
 }
 
 // http://swagger.io/specification/#infoObject
