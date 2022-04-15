@@ -59,7 +59,7 @@ func applyGenerate(p *plugin.Plugin, host string, basePath string) (*swaggerObje
 	newSecDefValue.In = "header"
 	s.SecurityDefinitions["apiKey"] = newSecDefValue
 
-	s.Security = append(s.Security, swaggerSecurityRequirementObject{"apiKey": []string{}})
+	//s.Security = append(s.Security, swaggerSecurityRequirementObject{"apiKey": []string{}})
 
 	requestResponseRefs := refMap{}
 	renderServiceRoutes(p.Api.Service, p.Api.Service.Groups, s.Paths, requestResponseRefs)
@@ -232,6 +232,10 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 			}
 
 			operationObject.Description = strings.ReplaceAll(operationObject.Description, "\"", "")
+
+			if group.Annotation.Properties["jwt"] != "" {
+				operationObject.Security = &[]swaggerSecurityRequirementObject{{"apiKey": []string{}}}
+			}
 
 			switch strings.ToUpper(route.Method) {
 			case http.MethodGet:
