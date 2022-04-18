@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 	"unsafe"
@@ -19,11 +20,35 @@ const (
 	defaultOption   = "default"
 	stringOption    = "string"
 	optionalOption  = "optional"
+	omitemptyOption = "omitempty"
 	optionsOption   = "options"
 	rangeOption     = "range"
 	optionSeparator = "|"
 	equalToken      = "="
 )
+
+func parseRangeOption(option string) (float64, float64, bool) {
+	const str = "\\[([+-]?\\d+(\\.\\d+)?):([+-]?\\d+(\\.\\d+)?)\\]"
+	result := regexp.MustCompile(str).FindStringSubmatch(option)
+	if len(result) != 5 {
+		return 0, 0, false
+	}
+
+	min, err := strconv.ParseFloat(result[1], 64)
+	if err != nil {
+		return 0, 0, false
+	}
+
+	max, err := strconv.ParseFloat(result[3], 64)
+	if err != nil {
+		return 0, 0, false
+	}
+
+	if max < min {
+		return min, min, true
+	}
+	return min, max, true
+}
 
 func applyGenerate(p *plugin.Plugin, host string, basePath string) (*swaggerObject, error) {
 	title, _ := strconv.Unquote(p.Api.Info.Properties["title"])
@@ -136,16 +161,37 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 								sp.Required = true
 								continue
 							}
+
+							required := true
 							for _, option := range tag.Options {
+								if strings.HasPrefix(option, optionsOption) {
+									segs := strings.SplitN(option, equalToken, 2)
+									if len(segs) == 2 {
+										sp.Enum = strings.Split(segs[1], optionSeparator)
+									}
+								}
+
+								if strings.HasPrefix(option, rangeOption) {
+									segs := strings.SplitN(option, equalToken, 2)
+									if len(segs) == 2 {
+										min, max, ok := parseRangeOption(segs[1])
+										if ok {
+											sp.Schema.Minimum = min
+											sp.Schema.Maximum = max
+										}
+									}
+								}
+
 								if strings.HasPrefix(option, defaultOption) {
 									segs := strings.Split(option, equalToken)
 									if len(segs) == 2 {
 										sp.Default = segs[1]
 									}
-								} else if !strings.HasPrefix(option, optionalOption) {
-									sp.Required = true
+								} else if strings.HasPrefix(option, optionalOption) || strings.HasPrefix(option, omitemptyOption) {
+									required = false
 								}
 							}
+							sp.Required = required
 						}
 
 						if len(member.Comment) > 0 {
@@ -288,15 +334,19 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 					}
 					continue
 				}
+
+				required := true
 				for _, option := range tag.Options {
-					switch {
-					case !strings.HasPrefix(option, optionalOption):
-						if !contains(schema.Required, tag.Name) {
-							schema.Required = append(schema.Required, tag.Name)
-						}
-						// case strings.HasPrefix(option, defaultOption):
-						// case strings.HasPrefix(option, optionsOption):
+					// case strings.HasPrefix(option, defaultOption):
+					// case strings.HasPrefix(option, optionsOption):
+
+					if strings.HasPrefix(option, optionalOption) || strings.HasPrefix(option, omitemptyOption) {
+						required = false
 					}
+				}
+
+				if required && !contains(schema.Required, tag.Name) {
+					schema.Required = append(schema.Required, tag.Name)
 				}
 			}
 		}
@@ -409,7 +459,19 @@ func schemaOfField(member spec.Member) swaggerSchemaObject {
 					ret.Default = segs[1]
 				}
 			case strings.HasPrefix(option, optionsOption):
-
+				segs := strings.SplitN(option, equalToken, 2)
+				if len(segs) == 2 {
+					ret.Enum = strings.Split(segs[1], optionSeparator)
+				}
+			case strings.HasPrefix(option, rangeOption):
+				segs := strings.SplitN(option, equalToken, 2)
+				if len(segs) == 2 {
+					min, max, ok := parseRangeOption(segs[1])
+					if ok {
+						ret.Minimum = min
+						ret.Maximum = max
+					}
+				}
 			}
 		}
 	}
