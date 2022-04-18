@@ -59,7 +59,7 @@ func applyGenerate(p *plugin.Plugin, host string, basePath string) (*swaggerObje
 	newSecDefValue.In = "header"
 	s.SecurityDefinitions["apiKey"] = newSecDefValue
 
-	s.Security = append(s.Security, swaggerSecurityRequirementObject{"apiKey": []string{}})
+	//s.Security = append(s.Security, swaggerSecurityRequirementObject{"apiKey": []string{}})
 
 	requestResponseRefs := refMap{}
 	renderServiceRoutes(p.Api.Service, p.Api.Service.Groups, s.Paths, requestResponseRefs)
@@ -233,6 +233,10 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 
 			operationObject.Description = strings.ReplaceAll(operationObject.Description, "\"", "")
 
+			if group.Annotation.Properties["jwt"] != "" {
+				operationObject.Security = &[]swaggerSecurityRequirementObject{{"apiKey": []string{}}}
+			}
+
 			switch strings.ToUpper(route.Method) {
 			case http.MethodGet:
 				pathItemObject.Get = operationObject
@@ -263,6 +267,10 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 		schema.Title = defineStruct.Name()
 
 		for _, member := range defineStruct.Members {
+			if hasPathParameters(member) {
+				continue
+			}
+
 			kv := keyVal{Value: schemaOfField(member)}
 			kv.Key = member.Name
 			if tag, err := member.GetPropertyName(); err == nil {
@@ -297,6 +305,15 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 	}
 }
 
+func hasPathParameters(member spec.Member) bool {
+	for _, tag := range member.Tags() {
+		if tag.Key == "path" {
+			return true
+		}
+	}
+
+	return false
+}
 func schemaOfField(member spec.Member) swaggerSchemaObject {
 	ret := swaggerSchemaObject{}
 
