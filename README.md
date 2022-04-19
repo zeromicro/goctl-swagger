@@ -3,7 +3,7 @@
 ### 1. 编译goctl-swagger插件
 
 ```
-GO111MODULE=on GOPROXY=https://goproxy.cn/,direct go get -u github.com/fachebot/goctl-swagger
+GO111MODULE=on GOPROXY=https://goproxy.cn/,direct go get -u github.com/zeromicro/goctl-swagger
 ```
 
 ### 2. 配置环境
