@@ -1,4 +1,4 @@
-module github.com/fachebot/goctl-swagger
+module github.com/zeromicro/goctl-swagger
 
 go 1.16
 
