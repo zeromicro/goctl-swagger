@@ -13,6 +13,8 @@ var swaggerMapTypes = map[string]reflect.Kind{
 	"*string":  reflect.String,
 	"int":      reflect.Int,
 	"*int":     reflect.Int,
+	"int8":     reflect.Int8,
+	"*int8":    reflect.Int8,
 	"int32":    reflect.Int,
 	"*int32":   reflect.Int,
 	"uint32":   reflect.Int,

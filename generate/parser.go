@@ -484,6 +484,8 @@ func primitiveSchema(kind reflect.Kind, t string) (ftype, format string, ok bool
 	switch kind {
 	case reflect.Int:
 		return "integer", "int32", true
+	case reflect.Int8:
+		return "integer", "int8", true
 	case reflect.Int64:
 		return "integer", "int64", true
 	case reflect.Bool:
