@@ -30,6 +30,7 @@ type (
         Birthday string `json:"birthday"`
         Description string `json:"description"`
         Tag []string `json:"tag"`
+        Tags [][]string `json:"tags"`
     }
 
     UserSearchReq {
