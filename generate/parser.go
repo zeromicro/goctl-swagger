@@ -390,6 +390,17 @@ func schemaOfField(member spec.Member) swaggerSchemaObject {
 			core = schemaCore{Type: "object"}
 		} else if refTypeName == "mapstringstring" {
 			core = schemaCore{Type: "object"}
+		} else if strings.HasPrefix(refTypeName, "[]") {
+			core = schemaCore{Type: "array"}
+
+			tempKind := swaggerMapTypes[strings.Replace(refTypeName, "[]", "", -1)]
+			ftype, format, ok := primitiveSchema(tempKind, refTypeName)
+			if ok {
+				core.Items = &swaggerItemsObject{Type: ftype, Format: format}
+			} else {
+				core.Items = &swaggerItemsObject{Type: ft.String(), Format: "UNKNOWN"}
+			}
+
 		} else {
 			core = schemaCore{
 				Ref: "#/definitions/" + refTypeName,

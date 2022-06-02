@@ -36,7 +36,6 @@
             }
           }
         ],
-        "requestBody": {},
         "tags": [
           "user-api"
         ]
@@ -63,7 +62,6 @@
             }
           }
         ],
-        "requestBody": {},
         "tags": [
           "user-api"
         ]
@@ -90,7 +88,6 @@
             "type": "string"
           }
         ],
-        "requestBody": {},
         "tags": [
           "user-api"
         ]
@@ -116,7 +113,6 @@
             "type": "string"
           }
         ],
-        "requestBody": {},
         "tags": [
           "user-api"
         ]
@@ -183,6 +179,15 @@
           "items": {
             "type": "string"
           }
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
         }
       },
       "title": "UserInfoReply",
@@ -191,20 +196,13 @@
         "age",
         "birthday",
         "description",
-        "tag"
+        "tag",
+        "tags"
       ]
     },
     "UserInfoReq": {
       "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        }
-      },
-      "title": "UserInfoReq",
-      "required": [
-        "id"
-      ]
+      "title": "UserInfoReq"
     },
     "UserSearchReq": {
       "type": "object",
@@ -227,10 +225,5 @@
       "name": "Authorization",
       "in": "header"
     }
-  },
-  "security": [
-    {
-      "apiKey": []
-    }
-  ]
+  }
 }
