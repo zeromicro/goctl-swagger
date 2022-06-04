@@ -141,6 +141,65 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 				}
 			}
 			if defineStruct, ok := route.RequestType.(spec.DefineStruct); ok {
+				for _, member := range defineStruct.Members {
+					if member.Name == "" {
+						memberDefineStruct, _ := member.Type.(spec.DefineStruct)
+						for _,m:=range memberDefineStruct.Members{
+							if strings.Contains(m.Tag, "header") {
+								tempKind := swaggerMapTypes[strings.Replace(m.Type.Name(), "[]", "", -1)]
+
+								ftype, format, ok := primitiveSchema(tempKind, m.Type.Name())
+								if !ok {
+									ftype = tempKind.String()
+									format = "UNKNOWN"
+								}
+								sp := swaggerParameterObject{In: "header", Type: ftype, Format: format}
+
+								for _, tag := range m.Tags() {
+									sp.Name = tag.Name
+									if len(tag.Options) == 0 {
+										sp.Required = true
+										continue
+									}
+
+									required := true
+									for _, option := range tag.Options {
+										if strings.HasPrefix(option, optionsOption) {
+											segs := strings.SplitN(option, equalToken, 2)
+											if len(segs) == 2 {
+												sp.Enum = strings.Split(segs[1], optionSeparator)
+											}
+										}
+
+										if strings.HasPrefix(option, rangeOption) {
+											segs := strings.SplitN(option, equalToken, 2)
+											if len(segs) == 2 {
+												min, max, ok := parseRangeOption(segs[1])
+												if ok {
+													sp.Schema.Minimum = min
+													sp.Schema.Maximum = max
+												}
+											}
+										}
+
+										if strings.HasPrefix(option, defaultOption) {
+											segs := strings.Split(option, equalToken)
+											if len(segs) == 2 {
+												sp.Default = segs[1]
+											}
+										} else if strings.HasPrefix(option, optionalOption) || strings.HasPrefix(option, omitemptyOption) {
+											required = false
+										}
+									}
+									sp.Required = required
+								}
+								sp.Description = strings.TrimLeft(m.Comment, "//")
+								parameters = append(parameters, sp)
+							}
+						}
+						continue
+					}
+				}
 				if strings.ToUpper(route.Method) == http.MethodGet {
 					for _, member := range defineStruct.Members {
 						if strings.Contains(member.Tag, "path") {
@@ -316,11 +375,32 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 			if hasPathParameters(member) {
 				continue
 			}
-
 			kv := keyVal{Value: schemaOfField(member)}
 			kv.Key = member.Name
 			if tag, err := member.GetPropertyName(); err == nil {
 				kv.Key = tag
+			}
+			if kv.Key == ""{
+				memberStruct ,_ := member.Type.(spec.DefineStruct)
+				for _,  m:=range memberStruct.Members{
+					if strings.Contains(m.Tag, "header") {
+						continue
+					}
+
+					mkv := keyVal{
+						Value:schemaOfField(m),
+						Key: m.Name,
+					}
+
+					if tag, err := m.GetPropertyName(); err == nil {
+						mkv.Key = tag
+					}
+					if schema.Properties == nil {
+						schema.Properties = &swaggerSchemaObjectProperties{}
+					}
+					*schema.Properties = append(*schema.Properties, mkv)
+				}
+				continue
 			}
 			if schema.Properties == nil {
 				schema.Properties = &swaggerSchemaObjectProperties{}
