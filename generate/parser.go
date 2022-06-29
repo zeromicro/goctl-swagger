@@ -144,7 +144,7 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 				for _, member := range defineStruct.Members {
 					if member.Name == "" {
 						memberDefineStruct, _ := member.Type.(spec.DefineStruct)
-						for _,m:=range memberDefineStruct.Members{
+						for _, m := range memberDefineStruct.Members {
 							if strings.Contains(m.Tag, "header") {
 								tempKind := swaggerMapTypes[strings.Replace(m.Type.Name(), "[]", "", -1)]
 
@@ -215,6 +215,9 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 						sp := swaggerParameterObject{In: "query", Type: ftype, Format: format}
 
 						for _, tag := range member.Tags() {
+							if tag.Key != "json" && tag.Key != "path" && tag.Key != "form" && tag.Key != "header" {
+								continue
+							}
 							sp.Name = tag.Name
 							if len(tag.Options) == 0 {
 								sp.Required = true
@@ -296,6 +299,7 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 			desc := "A successful response."
 			respRef := ""
 			if route.ResponseType != nil && len(route.ResponseType.Name()) > 0 {
+				// TODO
 				respRef = fmt.Sprintf("#/definitions/%s", route.ResponseType.Name())
 			}
 			tags := service.Name
@@ -380,16 +384,16 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 			if tag, err := member.GetPropertyName(); err == nil {
 				kv.Key = tag
 			}
-			if kv.Key == ""{
-				memberStruct ,_ := member.Type.(spec.DefineStruct)
-				for _,  m:=range memberStruct.Members{
+			if kv.Key == "" {
+				memberStruct, _ := member.Type.(spec.DefineStruct)
+				for _, m := range memberStruct.Members {
 					if strings.Contains(m.Tag, "header") {
 						continue
 					}
 
 					mkv := keyVal{
-						Value:schemaOfField(m),
-						Key: m.Name,
+						Value: schemaOfField(m),
+						Key:   m.Name,
 					}
 
 					if tag, err := m.GetPropertyName(); err == nil {
