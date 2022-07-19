@@ -144,10 +144,9 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 				for _, member := range defineStruct.Members {
 					if member.Name == "" {
 						memberDefineStruct, _ := member.Type.(spec.DefineStruct)
-						for _,m:=range memberDefineStruct.Members{
+						for _, m := range memberDefineStruct.Members {
 							if strings.Contains(m.Tag, "header") {
 								tempKind := swaggerMapTypes[strings.Replace(m.Type.Name(), "[]", "", -1)]
-
 								ftype, format, ok := primitiveSchema(tempKind, m.Type.Name())
 								if !ok {
 									ftype = tempKind.String()
@@ -205,59 +204,13 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 						if strings.Contains(member.Tag, "path") {
 							continue
 						}
-						tempKind := swaggerMapTypes[strings.Replace(member.Type.Name(), "[]", "", -1)]
-
-						ftype, format, ok := primitiveSchema(tempKind, member.Type.Name())
-						if !ok {
-							ftype = tempKind.String()
-							format = "UNKNOWN"
-						}
-						sp := swaggerParameterObject{In: "query", Type: ftype, Format: format}
-
-						for _, tag := range member.Tags() {
-							sp.Name = tag.Name
-							if len(tag.Options) == 0 {
-								sp.Required = true
-								continue
+						if embedStruct, isEmbed := member.Type.(spec.DefineStruct); isEmbed {
+							for _, m := range embedStruct.Members {
+								parameters = append(parameters, renderStruct(m))
 							}
-
-							required := true
-							for _, option := range tag.Options {
-								if strings.HasPrefix(option, optionsOption) {
-									segs := strings.SplitN(option, equalToken, 2)
-									if len(segs) == 2 {
-										sp.Enum = strings.Split(segs[1], optionSeparator)
-									}
-								}
-
-								if strings.HasPrefix(option, rangeOption) {
-									segs := strings.SplitN(option, equalToken, 2)
-									if len(segs) == 2 {
-										min, max, ok := parseRangeOption(segs[1])
-										if ok {
-											sp.Schema.Minimum = min
-											sp.Schema.Maximum = max
-										}
-									}
-								}
-
-								if strings.HasPrefix(option, defaultOption) {
-									segs := strings.Split(option, equalToken)
-									if len(segs) == 2 {
-										sp.Default = segs[1]
-									}
-								} else if strings.HasPrefix(option, optionalOption) || strings.HasPrefix(option, omitemptyOption) {
-									required = false
-								}
-							}
-							sp.Required = required
+							continue
 						}
-
-						if len(member.Comment) > 0 {
-							sp.Description = strings.TrimLeft(member.Comment, "//")
-						}
-
-						parameters = append(parameters, sp)
+						parameters = append(parameters, renderStruct(member))
 					}
 				} else {
 
@@ -360,6 +313,62 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 	}
 }
 
+func renderStruct(member spec.Member) swaggerParameterObject {
+	tempKind := swaggerMapTypes[strings.Replace(member.Type.Name(), "[]", "", -1)]
+
+	ftype, format, ok := primitiveSchema(tempKind, member.Type.Name())
+	if !ok {
+		ftype = tempKind.String()
+		format = "UNKNOWN"
+	}
+	sp := swaggerParameterObject{In: "query", Type: ftype, Format: format}
+
+	for _, tag := range member.Tags() {
+		sp.Name = tag.Name
+		if len(tag.Options) == 0 {
+			sp.Required = true
+			continue
+		}
+
+		required := true
+		for _, option := range tag.Options {
+			if strings.HasPrefix(option, optionsOption) {
+				segs := strings.SplitN(option, equalToken, 2)
+				if len(segs) == 2 {
+					sp.Enum = strings.Split(segs[1], optionSeparator)
+				}
+			}
+
+			if strings.HasPrefix(option, rangeOption) {
+				segs := strings.SplitN(option, equalToken, 2)
+				if len(segs) == 2 {
+					min, max, ok := parseRangeOption(segs[1])
+					if ok {
+						sp.Schema.Minimum = min
+						sp.Schema.Maximum = max
+					}
+				}
+			}
+
+			if strings.HasPrefix(option, defaultOption) {
+				segs := strings.Split(option, equalToken)
+				if len(segs) == 2 {
+					sp.Default = segs[1]
+				}
+			} else if strings.HasPrefix(option, optionalOption) || strings.HasPrefix(option, omitemptyOption) {
+				required = false
+			}
+		}
+		sp.Required = required
+	}
+
+	if len(member.Comment) > 0 {
+		sp.Description = strings.TrimLeft(member.Comment, "//")
+	}
+
+	return sp
+}
+
 func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.Type, refs refMap) {
 	for _, i2 := range p {
 		schema := swaggerSchemaObject{
@@ -380,16 +389,16 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 			if tag, err := member.GetPropertyName(); err == nil {
 				kv.Key = tag
 			}
-			if kv.Key == ""{
-				memberStruct ,_ := member.Type.(spec.DefineStruct)
-				for _,  m:=range memberStruct.Members{
+			if kv.Key == "" {
+				memberStruct, _ := member.Type.(spec.DefineStruct)
+				for _, m := range memberStruct.Members {
 					if strings.Contains(m.Tag, "header") {
 						continue
 					}
 
 					mkv := keyVal{
-						Value:schemaOfField(m),
-						Key: m.Name,
+						Value: schemaOfField(m),
+						Key:   m.Name,
 					}
 
 					if tag, err := m.GetPropertyName(); err == nil {
