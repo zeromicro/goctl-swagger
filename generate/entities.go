@@ -162,6 +162,7 @@ type swaggerParameterObject struct {
 	CollectionFormat string              `json:"collectionFormat,omitempty"`
 	Default          string              `json:"default,omitempty"`
 	MinItems         *int                `json:"minItems,omitempty"`
+	Example          string              `json:"example,omitempty"`
 
 	// Or you can explicitly refer to another type. If this is defined all
 	// other fields should be empty
@@ -171,10 +172,10 @@ type swaggerParameterObject struct {
 // core part of schema, which is common to itemsObject and schemaObject.
 // http://swagger.io/specification/#itemsObject
 type schemaCore struct {
-	Type    string          `json:"type,omitempty"`
-	Format  string          `json:"format,omitempty"`
-	Ref     string          `json:"$ref,omitempty"`
-	Example json.RawMessage `json:"example,omitempty"`
+	Type    string `json:"type,omitempty"`
+	Format  string `json:"format,omitempty"`
+	Ref     string `json:"$ref,omitempty"`
+	Example string `json:"example,omitempty"`
 
 	Items *swaggerItemsObject `json:"items,omitempty"`
 	// If the item is an enumeration include a list of all the *NAMES* of the
