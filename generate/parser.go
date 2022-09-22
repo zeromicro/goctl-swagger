@@ -23,6 +23,7 @@ const (
 	omitemptyOption = "omitempty"
 	optionsOption   = "options"
 	rangeOption     = "range"
+	exampleOption   = "example"
 	optionSeparator = "|"
 	equalToken      = "="
 )
@@ -188,6 +189,13 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 											}
 										} else if strings.HasPrefix(option, optionalOption) || strings.HasPrefix(option, omitemptyOption) {
 											required = false
+										}
+
+										if strings.HasPrefix(option, exampleOption) {
+											segs := strings.Split(option, equalToken)
+											if len(segs) == 2 {
+												sp.Example = segs[1]
+											}
 										}
 									}
 									sp.Required = required
@@ -357,6 +365,13 @@ func renderStruct(member spec.Member) swaggerParameterObject {
 				}
 			} else if strings.HasPrefix(option, optionalOption) || strings.HasPrefix(option, omitemptyOption) {
 				required = false
+			}
+
+			if strings.HasPrefix(option, exampleOption) {
+				segs := strings.Split(option, equalToken)
+				if len(segs) == 2 {
+					sp.Example = segs[1]
+				}
 			}
 		}
 		sp.Required = required
@@ -571,6 +586,11 @@ func schemaOfField(member spec.Member) swaggerSchemaObject {
 						ret.Minimum = min
 						ret.Maximum = max
 					}
+				}
+			case strings.HasPrefix(option, exampleOption):
+				segs := strings.Split(option, equalToken)
+				if len(segs) == 2 {
+					ret.Example = segs[1]
 				}
 			}
 		}
