@@ -99,8 +99,10 @@ func applyGenerate(p *plugin.Plugin, host string, basePath string) (*swaggerObje
 func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swaggerPathsObject, requestResponseRefs refMap) {
 	for _, group := range groups {
 		for _, route := range group.Routes {
-
 			path := group.GetAnnotation("prefix") + route.Path
+			if path[0] != '/' {
+				path = "/" + path
+			}
 			parameters := swaggerParametersObject{}
 
 			if countParams(path) > 0 {
