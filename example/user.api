@@ -36,6 +36,11 @@ type (
     UserSearchReq {
         KeyWord string `form:"keyWord"` // 关键词
     }
+
+    ErrorResponse {
+        Code string `json:"code"`
+        Message string `json:"message"`
+    }
 )
 
 @server(
@@ -59,6 +64,13 @@ service user-api {
         summary: 获取用户信息
     )
     @handler getUserInfo
+    /*
+    @respdoc-400 (
+        100101: out of authority
+        100102: user not exist
+    ) // Error code list
+    */
+    /*    @respdoc-500 (ErrorResponse) // Server Error */
     get /user/:id (UserInfoReq) returns (UserInfoReply)
 
     @doc(

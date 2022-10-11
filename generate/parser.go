@@ -2,6 +2,7 @@ package generate
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -26,6 +27,7 @@ const (
 	exampleOption   = "example"
 	optionSeparator = "|"
 	equalToken      = "="
+	atRespDoc       = "@respdoc-"
 )
 
 func parseRangeOption(option string) (float64, float64, bool) {
@@ -283,6 +285,52 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 						},
 					},
 				},
+			}
+
+			for _, v := range route.Doc {
+				markerIndex := strings.Index(v, atRespDoc)
+				if markerIndex >= 0 {
+					l := strings.Index(v, "(")
+					r := strings.Index(v, ")")
+					code := strings.TrimSpace(v[markerIndex+len(atRespDoc) : l])
+					var comment string
+					commentIndex := strings.Index(v, "//")
+					if commentIndex > 0 {
+						comment = strings.TrimSpace(strings.Trim(v[commentIndex+2:], "*/"))
+					}
+					content := strings.TrimSpace(v[l+1 : r])
+					if strings.Index(v, ":") > 0 {
+						lines := strings.Split(content, "\n")
+						kv := make(map[string]string, len(lines))
+						for _, line := range lines {
+							sep := strings.Index(line, ":")
+							key := strings.TrimSpace(line[:sep])
+							value := strings.TrimSpace(line[sep+1:])
+							kv[key] = value
+						}
+						kvByte, err := json.Marshal(kv)
+						if err != nil {
+							continue
+						}
+						operationObject.Responses[code] = swaggerResponseObject{
+							Description: comment,
+							Schema: swaggerSchemaObject{
+								schemaCore: schemaCore{
+									Example: string(kvByte),
+								},
+							},
+						}
+					} else if len(content) > 0 {
+						operationObject.Responses[code] = swaggerResponseObject{
+							Description: comment,
+							Schema: swaggerSchemaObject{
+								schemaCore: schemaCore{
+									Ref: fmt.Sprintf("#/definitions/%s", content),
+								},
+							},
+						}
+					}
+				}
 			}
 
 			// set OperationID
