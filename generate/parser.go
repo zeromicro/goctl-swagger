@@ -87,7 +87,7 @@ func applyGenerate(p *plugin.Plugin, host string, basePath string) (*swaggerObje
 	newSecDefValue.In = "header"
 	s.SecurityDefinitions["apiKey"] = newSecDefValue
 
-	//s.Security = append(s.Security, swaggerSecurityRequirementObject{"apiKey": []string{}})
+	// s.Security = append(s.Security, swaggerSecurityRequirementObject{"apiKey": []string{}})
 
 	requestResponseRefs := refMap{}
 	renderServiceRoutes(p.Api.Service, p.Api.Service.Groups, s.Paths, requestResponseRefs)
@@ -259,9 +259,19 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 			}
 
 			desc := "A successful response."
-			respRef := ""
+			respSchema := schemaCore{}
+			// respRef := swaggerSchemaObject{}
 			if route.ResponseType != nil && len(route.ResponseType.Name()) > 0 {
-				respRef = fmt.Sprintf("#/definitions/%s", route.ResponseType.Name())
+				if strings.HasPrefix(route.ResponseType.Name(), "[]") {
+
+					refTypeName := strings.Replace(route.ResponseType.Name(), "[", "", 1)
+					refTypeName = strings.Replace(refTypeName, "]", "", 1)
+
+					respSchema.Type = "array"
+					respSchema.Items = &swaggerItemsObject{Ref: fmt.Sprintf("#/definitions/%s", refTypeName)}
+				} else {
+					respSchema.Ref = fmt.Sprintf("#/definitions/%s", route.ResponseType.Name())
+				}
 			}
 			tags := service.Name
 			if value := group.GetAnnotation("group"); len(value) > 0 {
@@ -279,9 +289,7 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 					"200": swaggerResponseObject{
 						Description: desc,
 						Schema: swaggerSchemaObject{
-							schemaCore: schemaCore{
-								Ref: respRef,
-							},
+							schemaCore: respSchema,
 						},
 					},
 				},
@@ -457,6 +465,7 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 			if kv.Key == "" {
 				memberStruct, _ := member.Type.(spec.DefineStruct)
 				for _, m := range memberStruct.Members {
+
 					if strings.Contains(m.Tag, "header") {
 						continue
 					}
@@ -518,6 +527,7 @@ func hasPathParameters(member spec.Member) bool {
 
 	return false
 }
+
 func schemaOfField(member spec.Member) swaggerSchemaObject {
 	ret := swaggerSchemaObject{}
 
