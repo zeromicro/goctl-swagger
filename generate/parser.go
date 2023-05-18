@@ -387,7 +387,10 @@ func renderStruct(member spec.Member) swaggerParameterObject {
 		ftype = tempKind.String()
 		format = "UNKNOWN"
 	}
-	sp := swaggerParameterObject{In: "query", Type: ftype, Format: format}
+	sp := swaggerParameterObject{
+		In: "query", Type: ftype, Format: format,
+		Schema: &swaggerSchemaObject{},
+	}
 
 	for _, tag := range member.Tags() {
 		sp.Name = tag.Name
@@ -540,7 +543,7 @@ func schemaOfField(member spec.Member) swaggerSchemaObject {
 	comment = strings.Replace(comment, "//", "", -1)
 
 	switch ft := kind; ft {
-	case reflect.Invalid: //[]Struct 也有可能是 Struct
+	case reflect.Invalid: // []Struct 也有可能是 Struct
 		// []Struct
 		// map[ArrayType:map[Star:map[StringExpr:UserSearchReq] StringExpr:*UserSearchReq] StringExpr:[]*UserSearchReq]
 		refTypeName := strings.Replace(member.Type.Name(), "[", "", 1)
