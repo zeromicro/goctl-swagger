@@ -4,9 +4,8 @@ go 1.16
 
 require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
-	github.com/spf13/cobra v1.5.0 // indirect
 	github.com/urfave/cli/v2 v2.3.0
-	github.com/zeromicro/go-zero v1.3.0
-	github.com/zeromicro/go-zero/tools/goctl v1.3.2
-	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
+	github.com/zeromicro/go-zero v1.4.4
+	github.com/zeromicro/go-zero/tools/goctl v1.5.0
+	golang.org/x/oauth2 v0.0.0-20221014153046-6fdb5e3db783
 )
