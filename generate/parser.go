@@ -18,6 +18,7 @@ import (
 var strColon = []byte(":")
 
 const (
+	validateKey     = "validate"
 	defaultOption   = "default"
 	stringOption    = "string"
 	optionalOption  = "optional"
@@ -491,6 +492,11 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 			*schema.Properties = append(*schema.Properties, kv)
 
 			for _, tag := range member.Tags() {
+				if tag.Key == validateKey {
+					// if you want to define a go-validator in
+					// go-zero api, you should ignore it
+					continue
+				}
 				if len(tag.Options) == 0 {
 					if !contains(schema.Required, tag.Name) && tag.Name != "required" {
 						schema.Required = append(schema.Required, tag.Name)
