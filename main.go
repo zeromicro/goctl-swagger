@@ -5,8 +5,8 @@ import (
 	"os"
 	"runtime"
 
+	"github.com/shyandsy/goctl-swagger/action"
 	"github.com/urfave/cli/v2"
-	"github.com/zeromicro/goctl-swagger/action"
 )
 
 var (
@@ -28,6 +28,14 @@ var (
 				&cli.StringFlag{
 					Name:  "filename",
 					Usage: "swagger save file name",
+				},
+				&cli.StringFlag{
+					Name:  "api",
+					Usage: "api file name",
+				},
+				&cli.StringFlag{
+					Name:  "dir",
+					Usage: "generated file dir",
 				},
 			},
 		},
