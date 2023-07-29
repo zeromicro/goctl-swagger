@@ -1,5 +1,23 @@
 # goctl-swagger
+本库对goctl-swagger做以下修改
+- 不在通过os.stdin读取解析结果，直接调用goctl parser解析
+- 增加参数
+  - -api: 指定api文件
+  - -dir: 指定输出文件夹
 
+本机运行命令
+```
+go build -o swagger.exe    
+./swagger.exe swagger --filename sso.json -api sso.api -dir . -host 127.0.0.2 -basepath /api 
+```
+
+安装使用
+```
+GOPROXY=https://goproxy.cn/,direct go install github.com/shyandsy/goctl-swagger@latest
+goctl-swagger swagger --filename sso.json -api sso.api -dir . -host 127.0.0.2 -basepath /api 
+```
+
+# 原版文档
 ### 1. 编译goctl-swagger插件
 
 ```
