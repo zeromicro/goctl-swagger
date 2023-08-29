@@ -81,8 +81,8 @@
         },
         "parameters": [
           {
-            "name": "keyWord",
-            "description": " 关键词",
+            "name": "关键词",
+            "description": "关键词",
             "in": "query",
             "required": true,
             "type": "string"
@@ -158,12 +158,18 @@
         "password": {
           "type": "string",
           "description": "测试2"
+        },
+        "gender": {
+          "type": "integer",
+          "format": "int32",
+          "description": " 性别 0女 1男"
         }
       },
       "title": "LoginReq",
       "required": [
         "username",
-        "password"
+        "password",
+        "gender"
       ]
     },
     "RegisterReq": {
@@ -237,7 +243,7 @@
       "properties": {
         "keyWord": {
           "type": "string",
-          "description": " 关键词"
+          "description": "关键词"
         }
       },
       "title": "UserSearchReq",

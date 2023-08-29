@@ -17,8 +17,9 @@ type (
     }
 
     LoginReq {
-        Username string `json:"username"` //测试
-        Password string `json:"password"`//测试2
+        Username string `json:"username" default:"John-Test"` //测试
+        Password string `json:"password" description:"测试2"`
+		Gender int `form:"gender" validate:"oneof=0 1"` // 性别 0女 1男
     }
     UserInfoReq {
         Id string `path:"id"`
@@ -34,7 +35,7 @@ type (
     }
 
     UserSearchReq {
-        KeyWord string `form:"keyWord"` // 关键词
+        KeyWord string `form:"keyWord" description:"关键词"`
     }
 
     ErrorResponse {

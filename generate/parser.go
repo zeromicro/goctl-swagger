@@ -28,6 +28,9 @@ const (
 	optionSeparator = "|"
 	equalToken      = "="
 	atRespDoc       = "@respdoc-"
+
+	validateOption    = "validate"
+	descriptionOption = "description"
 )
 
 func parseRangeOption(option string) (float64, float64, bool) {
@@ -390,7 +393,12 @@ func renderStruct(member spec.Member) swaggerParameterObject {
 	sp := swaggerParameterObject{In: "query", Type: ftype, Format: format}
 
 	for _, tag := range member.Tags() {
+		//fmt.Printf(" renderStruct:Tag ======== :%+v \n ", tag)
+
 		sp.Name = tag.Name
+		if tag.Key == descriptionOption { // 给备注赋值
+			sp.Description = tag.Name
+		}
 		if len(tag.Options) == 0 {
 			sp.Required = true
 			continue
@@ -454,6 +462,7 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 		schema.Title = defineStruct.Name()
 
 		for _, member := range defineStruct.Members {
+			//fmt.Printf(" ======= member ======= %+v\n ", member)
 			if hasPathParameters(member) {
 				continue
 			}
@@ -491,8 +500,9 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 			*schema.Properties = append(*schema.Properties, kv)
 
 			for _, tag := range member.Tags() {
+				//fmt.Printf("tag :%+v \n", tag)
 				if len(tag.Options) == 0 {
-					if !contains(schema.Required, tag.Name) && tag.Name != "required" {
+					if !contains(schema.Required, tag.Name) && (tag.Name != "required" && tag.Key != validateOption && tag.Key != descriptionOption && tag.Key != defaultOption) {
 						schema.Required = append(schema.Required, tag.Name)
 					}
 					continue
@@ -503,7 +513,8 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 					// case strings.HasPrefix(option, defaultOption):
 					// case strings.HasPrefix(option, optionsOption):
 
-					if strings.HasPrefix(option, optionalOption) || strings.HasPrefix(option, omitemptyOption) {
+					if strings.HasPrefix(option, optionalOption) || strings.HasPrefix(option, omitemptyOption) ||
+						strings.HasPrefix(option, validateOption) || strings.HasPrefix(option, descriptionOption) || strings.HasPrefix(option, defaultOption) {
 						required = false
 					}
 				}
@@ -536,6 +547,7 @@ func schemaOfField(member spec.Member) swaggerSchemaObject {
 	kind := swaggerMapTypes[member.Type.Name()]
 	var props *swaggerSchemaObjectProperties
 
+	//fmt.Printf(" ==== Kind:%v,Tag:%s,Name:%s,comment:%s ====\n", kind, member.Tag, member.Name, member.Comment)
 	comment := member.GetComment()
 	comment = strings.Replace(comment, "//", "", -1)
 
@@ -623,6 +635,10 @@ func schemaOfField(member spec.Member) swaggerSchemaObject {
 	ret.Description = comment
 
 	for _, tag := range member.Tags() {
+		//fmt.Printf("Tag ======== :%+v \n ", tag)
+		if tag.Key == descriptionOption {
+			ret.Description = tag.Name // 给自定义结构体的描述赋值
+		}
 		if len(tag.Options) == 0 {
 			continue
 		}
