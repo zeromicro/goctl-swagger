@@ -6,6 +6,15 @@
 GOPROXY=https://goproxy.cn/,direct go install github.com/zeromicro/goctl-swagger@latest
 ```
 
+* 本地调试编译
+```shell
+make build
+```
+如果您不想覆盖`$GOPATH/bin`下面的`goctl-swagger`,请为`build`生成的`goctl-swagger`重命名
+```shell
+mv goctl-swagger swagtest
+```
+
 ### 2. 配置环境
 
 将$GOPATH/bin中的goctl-swagger添加到环境变量
