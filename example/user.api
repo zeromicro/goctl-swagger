@@ -11,14 +11,15 @@ type (
     
     //注册请求结构
     RegisterReq {
-        Username string `json:"username"`
-        Password string `json:"password"`
+        Username string `json:"username" description:"用户名"`
+        Password string `json:"password" default:"admin123"`
         Mobile string `json:"mobile"`
     }
 
     LoginReq {
         Username string `json:"username"` //测试
         Password string `json:"password"`//测试2
+        Gender   int    `json:"gender,optional" description:"性别 0女 1男" validate:"is one of 0 1"`
     }
     UserInfoReq {
         Id string `path:"id"`
