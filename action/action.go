@@ -19,5 +19,6 @@ func Generator(ctx *cli.Context) error {
 	}
 	basepath := ctx.String("basepath")
 	host := ctx.String("host")
-	return generate.Do(fileName, host, basepath, p)
+	schemes := ctx.String("schemes")
+	return generate.Do(fileName, host, basepath, schemes, p)
 }

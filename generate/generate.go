@@ -9,8 +9,8 @@ import (
 	"github.com/zeromicro/go-zero/tools/goctl/plugin"
 )
 
-func Do(filename string, host string, basePath string, in *plugin.Plugin) error {
-	swagger, err := applyGenerate(in, host, basePath)
+func Do(filename string, host string, basePath string, schemes string, in *plugin.Plugin) error {
+	swagger, err := applyGenerate(in, host, basePath, schemes)
 	if err != nil {
 		fmt.Println(err)
 	}

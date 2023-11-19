@@ -86,10 +86,10 @@ GOPROXY=https://goproxy.cn/,direct go install github.com/zeromicro/goctl-swagger
     goctl api plugin -plugin goctl-swagger="swagger -filename user.json" -api user.api -dir .
     ```
 
-* 指定Host，basePath [api-host-and-base-path](https://swagger.io/docs/specification/2-0/api-host-and-base-path/)
+* 指定Host，basePath，schemes [api-host-and-base-path](https://swagger.io/docs/specification/2-0/api-host-and-base-path/)
 
     ```shell script
-    goctl api plugin -plugin goctl-swagger="swagger -filename user.json -host 127.0.0.2 -basepath /api" -api user.api -dir .
+    goctl api plugin -plugin goctl-swagger="swagger -filename user.json -host 127.0.0.2 -basepath /api -schemes https,wss" -api user.api -dir .
     ```
 
 * swagger ui 查看生成的文档
