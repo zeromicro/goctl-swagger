@@ -243,13 +243,6 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 							Schema:   &schema,
 						}
 
-						for _, member := range defineStruct.Members {
-							if strings.Contains(member.Tag, "form") {
-								parameter.In = "formData"
-								break
-							}
-						}
-
 						doc := strings.Join(route.RequestType.Documents(), ",")
 						doc = strings.Replace(doc, "//", "", -1)
 
