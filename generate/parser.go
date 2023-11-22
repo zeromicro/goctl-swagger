@@ -242,6 +242,14 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 							Required: true,
 							Schema:   &schema,
 						}
+
+						for _, member := range defineStruct.Members {
+							if strings.Contains(member.Tag, "form") {
+								parameter.In = "formData"
+								break
+							}
+						}
+
 						doc := strings.Join(route.RequestType.Documents(), ",")
 						doc = strings.Replace(doc, "//", "", -1)
 
@@ -294,6 +302,15 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 						},
 					},
 				},
+			}
+
+			if defineStruct, ok := route.RequestType.(spec.DefineStruct); ok {
+				for _, member := range defineStruct.Members {
+					if strings.Contains(member.Tag, "form") {
+						operationObject.Consumes = []string{"multipart/form-data"}
+						break
+					}
+				}
 			}
 
 			for _, v := range route.Doc {
