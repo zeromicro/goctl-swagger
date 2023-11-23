@@ -19,7 +19,6 @@ import (
 var strColon = []byte(":")
 
 const (
-	validateKey     = "validate"
 	defaultOption   = "default"
 	stringOption    = "string"
 	optionalOption  = "optional"
@@ -30,6 +29,12 @@ const (
 	optionSeparator = "|"
 	equalToken      = "="
 	atRespDoc       = "@respdoc-"
+
+	tagKeyHeader   = "header"
+	tagKeyPath     = "path"
+	tagKeyForm     = "form"
+	tagKeyJson     = "json"
+	tagKeyValidate = "validate"
 )
 
 func parseRangeOption(option string) (float64, float64, bool) {
@@ -116,11 +121,21 @@ func applyGenerate(p *plugin.Plugin, host string, basePath string, schemes strin
 func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swaggerPathsObject, requestResponseRefs refMap) {
 	for _, group := range groups {
 		for _, route := range group.Routes {
+			var (
+				pathParamMap             = make(map[string]swaggerParameterObject)
+				parameters               swaggerParametersObject
+				hasBody                  bool
+				containForm, containJson bool
+			)
+
 			path := group.GetAnnotation("prefix") + route.Path
 			if path[0] != '/' {
 				path = "/" + path
 			}
-			parameters := swaggerParametersObject{}
+
+			if m := strings.ToUpper(route.Method); m == http.MethodPost || m == http.MethodPut || m == http.MethodPatch {
+				hasBody = true
+			}
 
 			if countParams(path) > 0 {
 				p := strings.Split(path, "/")
@@ -129,7 +144,6 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 					if strings.Contains(part, ":") {
 						key := strings.TrimPrefix(p[i], ":")
 						path = strings.Replace(path, fmt.Sprintf(":%s", key), fmt.Sprintf("{%s}", key), 1)
-
 						spo := swaggerParameterObject{
 							Name:     key,
 							In:       "path",
@@ -156,91 +170,27 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 							spo.Description = strings.Trim(prop, "\"")
 						}
 
-						parameters = append(parameters, spo)
+						pathParamMap[spo.Name] = spo
 					}
 				}
 			}
 			if defineStruct, ok := route.RequestType.(spec.DefineStruct); ok {
 				for _, member := range defineStruct.Members {
-					if member.Name == "" {
-						memberDefineStruct, _ := member.Type.(spec.DefineStruct)
-						for _, m := range memberDefineStruct.Members {
-							if strings.Contains(m.Tag, "header") {
-								tempKind := swaggerMapTypes[strings.Replace(m.Type.Name(), "[]", "", -1)]
-								ftype, format, ok := primitiveSchema(tempKind, m.Type.Name())
-								if !ok {
-									ftype = tempKind.String()
-									format = "UNKNOWN"
-								}
-								sp := swaggerParameterObject{In: "header", Type: ftype, Format: format}
-
-								for _, tag := range m.Tags() {
-									sp.Name = tag.Name
-									if len(tag.Options) == 0 {
-										sp.Required = true
-										continue
-									}
-
-									required := true
-									for _, option := range tag.Options {
-										if strings.HasPrefix(option, optionsOption) {
-											segs := strings.SplitN(option, equalToken, 2)
-											if len(segs) == 2 {
-												sp.Enum = strings.Split(segs[1], optionSeparator)
-											}
-										}
-
-										if strings.HasPrefix(option, rangeOption) {
-											segs := strings.SplitN(option, equalToken, 2)
-											if len(segs) == 2 {
-												min, max, ok := parseRangeOption(segs[1])
-												if ok {
-													sp.Schema.Minimum = min
-													sp.Schema.Maximum = max
-												}
-											}
-										}
-
-										if strings.HasPrefix(option, defaultOption) {
-											segs := strings.Split(option, equalToken)
-											if len(segs) == 2 {
-												sp.Default = segs[1]
-											}
-										} else if strings.HasPrefix(option, optionalOption) || strings.HasPrefix(option, omitemptyOption) {
-											required = false
-										}
-
-										if strings.HasPrefix(option, exampleOption) {
-											segs := strings.Split(option, equalToken)
-											if len(segs) == 2 {
-												sp.Example = segs[1]
-											}
-										}
-									}
-									sp.Required = required
-								}
-								sp.Description = strings.TrimLeft(m.Comment, "//")
-								parameters = append(parameters, sp)
-							}
-						}
-						continue
+					f, j := renderMember(pathParamMap, &parameters, member, hasBody)
+					if f {
+						containForm = true
+					}
+					if j {
+						containJson = true
 					}
 				}
-				if strings.ToUpper(route.Method) == http.MethodGet {
-					for _, member := range defineStruct.Members {
-						if strings.Contains(member.Tag, "path") {
-							continue
-						}
-						if embedStruct, isEmbed := member.Type.(spec.DefineStruct); isEmbed {
-							for _, m := range embedStruct.Members {
-								parameters = append(parameters, renderStruct(m))
-							}
-							continue
-						}
-						parameters = append(parameters, renderStruct(member))
-					}
-				} else {
 
+				if len(pathParamMap) > 0 {
+					for _, p := range pathParamMap {
+						parameters = append(parameters, p)
+					}
+				}
+				if hasBody {
 					reqRef := fmt.Sprintf("#/definitions/%s", route.RequestType.Name())
 
 					if len(route.RequestType.Name()) > 0 {
@@ -310,14 +260,10 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 					},
 				},
 			}
-
-			if defineStruct, ok := route.RequestType.(spec.DefineStruct); ok {
-				for _, member := range defineStruct.Members {
-					if strings.Contains(member.Tag, "form") {
-						operationObject.Consumes = []string{"multipart/form-data"}
-						break
-					}
-				}
+			// if request has body, there is no way to distinguish query param and form param.
+			// because they both share the "form" tag, the same param will appear in both query and body.
+			if hasBody && containForm && !containJson {
+				operationObject.Consumes = []string{"multipart/form-data", "application/x-www-form-urlencoded"}
 			}
 
 			for _, v := range route.Doc {
@@ -404,6 +350,117 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 	}
 }
 
+// renderMember collect param property from spec.Member, return whether there exists form fields and json fields.
+func renderMember(pathParamMap map[string]swaggerParameterObject,
+	parameters *swaggerParametersObject, member spec.Member, hasBody bool) (containForm, containJson bool) {
+	if embedStruct, isEmbed := member.Type.(spec.DefineStruct); isEmbed {
+		for _, m := range embedStruct.Members {
+			f, j := renderMember(pathParamMap, parameters, m, hasBody)
+			if f {
+				containForm = true
+			}
+			if j {
+				containJson = true
+			}
+		}
+		return
+	}
+
+	p := renderStruct(member)
+	if p.In == "body" {
+		containJson = true
+		return
+	}
+
+	if hasBody && p.Type == "" {
+		return
+	}
+
+	if p.Type == "query" {
+		containForm = true
+	}
+
+	// default in query?
+	if p.In == "" {
+		p.In = "query"
+	}
+
+	if op, ok := pathParamMap[p.Name]; p.In == "path" && ok {
+		if p.Description == "" && op.Description != "" {
+			p.Description = op.Description
+		}
+		delete(pathParamMap, p.Name)
+	}
+	*parameters = append(*parameters, p)
+	return
+}
+
+func fillValidateOption(s *swaggerSchemaObject, opt string) {
+	kv := strings.SplitN(opt, "=", 2)
+	if len(kv) != 2 {
+		return
+	}
+	switch kv[0] {
+	case "oneof":
+		var es []string
+		// oneof='red green' 'blue yellow'
+		if strings.Contains(kv[1], "'") {
+			es = strings.Split(kv[1], "' '")
+			es[0] = strings.TrimPrefix(es[0], "'")
+			es[len(es)-1] = strings.TrimSuffix(es[len(es)-1], "'")
+		} else {
+			es = strings.Split(kv[1], " ")
+		}
+		s.Enum = es
+	case "min", "gte", "gt":
+		switch s.Type {
+		case "number", "integer":
+			s.Minimum, _ = strconv.ParseFloat(kv[1], 64)
+		case "array", "string":
+			v, err := strconv.ParseUint(kv[1], 10, 64)
+			if err != nil {
+				break
+			}
+			if s.Type == "array" {
+				s.MinItems = v
+			} else {
+				s.MinLength = v
+			}
+		}
+		if kv[0] == "gt" {
+			s.ExclusiveMinimum = true
+		}
+	case "max", "lte", "lt":
+		switch s.Type {
+		case "number", "integer":
+			s.Maximum, _ = strconv.ParseFloat(kv[1], 64)
+		case "array", "string":
+			v, err := strconv.ParseUint(kv[1], 10, 64)
+			if err != nil {
+				break
+			}
+			if s.Type == "array" {
+				s.MaxItems = v
+			} else {
+				s.MaxLength = v
+			}
+		}
+		if kv[0] == "lt" {
+			s.ExclusiveMaximum = true
+		}
+	}
+}
+func fillValidate(s *swaggerSchemaObject, tag *spec.Tag) {
+	if tag.Key != tagKeyValidate {
+		return
+	}
+	fillValidateOption(s, tag.Name)
+	for _, opt := range tag.Options {
+		fillValidateOption(s, opt)
+	}
+}
+
+// renderStruct only need to deal with params in header/path/query
 func renderStruct(member spec.Member) swaggerParameterObject {
 	tempKind := swaggerMapTypes[strings.Replace(member.Type.Name(), "[]", "", -1)]
 
@@ -412,10 +469,23 @@ func renderStruct(member spec.Member) swaggerParameterObject {
 		ftype = tempKind.String()
 		format = "UNKNOWN"
 	}
-	sp := swaggerParameterObject{In: "query", Type: ftype, Format: format}
+	sp := swaggerParameterObject{In: "", Type: ftype, Format: format, Schema: new(swaggerSchemaObject)}
 
 	for _, tag := range member.Tags() {
-		if tag.Key == validateKey {
+		switch tag.Key {
+		case tagKeyHeader:
+			sp.In = "header"
+		case tagKeyPath:
+			sp.In = "path"
+		case tagKeyForm:
+			sp.In = "query"
+		case tagKeyJson:
+			sp.In = "body"
+		case tagKeyValidate:
+			fillValidate(sp.Schema, tag)
+			sp.Enum = sp.Schema.Enum
+			continue
+		default:
 			continue
 		}
 
@@ -473,29 +543,35 @@ func renderStruct(member spec.Member) swaggerParameterObject {
 
 func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.Type, refs refMap) {
 	for _, i2 := range p {
+		var (
+			formFields    []keyVal
+			untagesFields []keyVal
+		)
+
 		schema := swaggerSchemaObject{
 			schemaCore: schemaCore{
 				Type: "object",
 			},
+			Properties: new(swaggerSchemaObjectProperties),
 		}
 		defineStruct, _ := i2.(spec.DefineStruct)
 
 		schema.Title = defineStruct.Name()
 
 		for _, member := range defineStruct.Members {
-			if hasPathParameters(member) {
+			in := fieldIn(member)
+			if in == tagKeyHeader || in == tagKeyPath {
 				continue
 			}
-			kv := keyVal{Value: schemaOfField(member)}
-			kv.Key = member.Name
+			kv := keyVal{Key: member.Name, Value: schemaOfField(member)}
 			if tag, err := member.GetPropertyName(); err == nil {
 				kv.Key = tag
 			}
 			if kv.Key == "" {
 				memberStruct, _ := member.Type.(spec.DefineStruct)
 				for _, m := range memberStruct.Members {
-
-					if strings.Contains(m.Tag, "header") {
+					in = fieldIn(m)
+					if in == tagKeyHeader || in == tagKeyPath {
 						continue
 					}
 
@@ -507,22 +583,28 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 					if tag, err := m.GetPropertyName(); err == nil {
 						mkv.Key = tag
 					}
-					if schema.Properties == nil {
-						schema.Properties = &swaggerSchemaObjectProperties{}
+
+					switch in {
+					case tagKeyJson:
+						*schema.Properties = append(*schema.Properties, mkv)
+					case tagKeyForm:
+						formFields = append(formFields, mkv)
+					default:
+						untagesFields = append(untagesFields, mkv)
 					}
-					*schema.Properties = append(*schema.Properties, mkv)
 				}
 				continue
 			}
-			if schema.Properties == nil {
-				schema.Properties = &swaggerSchemaObjectProperties{}
+			switch in {
+			case tagKeyJson:
+				*schema.Properties = append(*schema.Properties, kv)
+			case tagKeyForm:
+				formFields = append(formFields, kv)
+			default:
+				untagesFields = append(untagesFields, kv)
 			}
-			*schema.Properties = append(*schema.Properties, kv)
 
 			for _, tag := range member.Tags() {
-				if tag.Key == validateKey {
-					continue
-				}
 				if len(tag.Options) == 0 {
 					if !contains(schema.Required, tag.Name) && tag.Name != "required" {
 						schema.Required = append(schema.Required, tag.Name)
@@ -545,19 +627,30 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 				}
 			}
 		}
+		// if there exists any json fields, form fields are ignored (considered to be query params).
+		if len(*schema.Properties) > 0 || len(formFields) == 0 {
+			if len(untagesFields) > 0 {
+				*schema.Properties = append(*schema.Properties, untagesFields...)
+			}
+		} else {
+			*schema.Properties = formFields
+			if len(untagesFields) > 0 {
+				*schema.Properties = append(*schema.Properties, untagesFields...)
+			}
+		}
 
 		d[i2.Name()] = schema
 	}
 }
 
-func hasPathParameters(member spec.Member) bool {
+func fieldIn(member spec.Member) string {
 	for _, tag := range member.Tags() {
-		if tag.Key == "path" {
-			return true
+		if tag.Key == tagKeyPath || tag.Key == tagKeyHeader || tag.Key == tagKeyForm || tag.Key == tagKeyJson {
+			return tag.Key
 		}
 	}
 
-	return false
+	return ""
 }
 
 func schemaOfField(member spec.Member) swaggerSchemaObject {
@@ -655,9 +748,14 @@ func schemaOfField(member spec.Member) swaggerSchemaObject {
 	ret.Description = comment
 
 	for _, tag := range member.Tags() {
-		if len(tag.Options) == 0 {
+		if tag.Key == tagKeyValidate {
+			fillValidate(&ret, tag)
 			continue
 		}
+		if len(tag.Options) == 0 || tag.Key != tagKeyForm && tag.Key != tagKeyJson {
+			continue
+		}
+
 		for _, option := range tag.Options {
 			switch {
 			case strings.HasPrefix(option, defaultOption):

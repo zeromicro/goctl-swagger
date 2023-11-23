@@ -137,8 +137,9 @@ type swaggerOperationObject struct {
 	RequestBody *struct {
 		Content swaggerContentObject `json:"content,omitempty"`
 	} `json:"requestBody,omitempty"`
-	Tags         []string                            `json:"tags,omitempty"`
-	Deprecated   bool                                `json:"deprecated,omitempty"`
+	Tags       []string `json:"tags,omitempty"`
+	Deprecated bool     `json:"deprecated,omitempty"`
+
 	Consumes     []string                            `json:"consumes,omitempty"`
 	Security     *[]swaggerSecurityRequirementObject `json:"security,omitempty"`
 	ExternalDocs *swaggerExternalDocumentationObject `json:"externalDocs,omitempty"`
