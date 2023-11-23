@@ -26,7 +26,7 @@ GOPROXY=https://goproxy.cn/,direct go install github.com/zeromicro/goctl-swagger
     
     type (
      RegisterReq {
-      Username string `json:"username"`
+      Username string `json:"username" validate:"min=10"`  // can get parameter constraints from [validate](https://github.com/go-playground/validator) tag
       Password string `json:"password"`
       Mobile string `json:"mobile"`
      }
