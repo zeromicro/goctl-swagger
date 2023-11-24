@@ -29,6 +29,10 @@ var (
 					Name:  "filename",
 					Usage: "swagger save file name",
 				},
+				&cli.StringFlag{
+					Name:  "schemes",
+					Usage: "swagger support schemes: http, https, ws, wss",
+				},
 			},
 		},
 	}

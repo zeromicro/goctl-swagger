@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"reflect"
 	"regexp"
@@ -54,7 +55,7 @@ func parseRangeOption(option string) (float64, float64, bool) {
 	return min, max, true
 }
 
-func applyGenerate(p *plugin.Plugin, host string, basePath string) (*swaggerObject, error) {
+func applyGenerate(p *plugin.Plugin, host string, basePath string, schemes string) (*swaggerObject, error) {
 	title, _ := strconv.Unquote(p.Api.Info.Properties["title"])
 	version, _ := strconv.Unquote(p.Api.Info.Properties["version"])
 	desc, _ := strconv.Unquote(p.Api.Info.Properties["desc"])
@@ -80,6 +81,19 @@ func applyGenerate(p *plugin.Plugin, host string, basePath string) (*swaggerObje
 		s.BasePath = basePath
 	}
 
+	if len(schemes) > 0 {
+		supportedSchemes := []string{"http", "https", "ws", "wss"}
+		ss := strings.Split(schemes, ",")
+		for i := range ss {
+			scheme := ss[i]
+			scheme = strings.TrimSpace(scheme)
+			if !contains(supportedSchemes, scheme) {
+				log.Fatalf("unsupport scheme: [%s], only support [http, https, ws, wss]", scheme)
+			}
+			ss[i] = scheme
+		}
+		s.Schemes = ss
+	}
 	s.SecurityDefinitions = swaggerSecurityDefinitionsObject{}
 	newSecDefValue := swaggerSecuritySchemeObject{}
 	newSecDefValue.Name = "Authorization"
