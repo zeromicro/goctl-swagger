@@ -557,6 +557,9 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 		for _, member := range defineStruct.Members {
 			collectProperties(schema.Properties, &formFields, &untaggedFields, member)
 			for _, tag := range member.Tags() {
+				if tag.Key != tagKeyForm && tag.Key != tagKeyJson {
+					continue
+				}
 				if len(tag.Options) == 0 {
 					if !contains(schema.Required, tag.Name) && tag.Name != "required" {
 						schema.Required = append(schema.Required, tag.Name)
