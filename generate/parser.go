@@ -18,6 +18,7 @@ import (
 var strColon = []byte(":")
 
 const (
+	validateKey     = "validate"
 	defaultOption   = "default"
 	stringOption    = "string"
 	optionalOption  = "optional"
@@ -241,6 +242,7 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 							Required: true,
 							Schema:   &schema,
 						}
+
 						doc := strings.Join(route.RequestType.Documents(), ",")
 						doc = strings.Replace(doc, "//", "", -1)
 
@@ -293,6 +295,15 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 						},
 					},
 				},
+			}
+
+			if defineStruct, ok := route.RequestType.(spec.DefineStruct); ok {
+				for _, member := range defineStruct.Members {
+					if strings.Contains(member.Tag, "form") {
+						operationObject.Consumes = []string{"multipart/form-data"}
+						break
+					}
+				}
 			}
 
 			for _, v := range route.Doc {
@@ -390,6 +401,10 @@ func renderStruct(member spec.Member) swaggerParameterObject {
 	sp := swaggerParameterObject{In: "query", Type: ftype, Format: format}
 
 	for _, tag := range member.Tags() {
+		if tag.Key == validateKey {
+			continue
+		}
+
 		sp.Name = tag.Name
 		if len(tag.Options) == 0 {
 			sp.Required = true
@@ -491,6 +506,9 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 			*schema.Properties = append(*schema.Properties, kv)
 
 			for _, tag := range member.Tags() {
+				if tag.Key == validateKey {
+					continue
+				}
 				if len(tag.Options) == 0 {
 					if !contains(schema.Required, tag.Name) && tag.Name != "required" {
 						schema.Required = append(schema.Required, tag.Name)
