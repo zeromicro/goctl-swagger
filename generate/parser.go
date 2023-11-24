@@ -367,24 +367,23 @@ func renderMember(pathParamMap map[string]swaggerParameterObject,
 	}
 
 	p := renderStruct(member)
+
+	if hasBody && p.In == "" {
+		return
+	}
 	if p.In == "body" {
 		containJson = true
 		return
 	}
-
-	if hasBody && p.Type == "" {
-		return
-	}
-
 	if p.In == "query" {
 		containForm = true
 	}
-
 	// default in query?
 	if p.In == "" {
 		p.In = "query"
 	}
 
+	// overwrite path parameter if we get a user defined one from struct.
 	if op, ok := pathParamMap[p.Name]; p.In == "path" && ok {
 		if p.Description == "" && op.Description != "" {
 			p.Description = op.Description
@@ -581,7 +580,7 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 			}
 		}
 		// if there exists any json fields, form fields are ignored (considered to be params in query).
-		if len(*schema.Properties) == 0 || len(formFields) > 0 {
+		if len(*schema.Properties) == 0 && len(formFields) > 0 {
 			*schema.Properties = formFields
 		}
 		if len(untaggedFields) > 0 {
@@ -604,7 +603,7 @@ func collectProperties(jsonFields, formFields, untaggedFields *swaggerSchemaObje
 	}
 	if name == "" {
 		memberStruct, _ := member.Type.(spec.DefineStruct)
-		// currently go-zero does not support show members of nested over 2 levels(include).
+		// currently go-zero does not support show members of nested struct over 2 levels(include).
 		// but openapi 2.0 does not support inline schema, we have no choice but use an empty properties name
 		// which is not friendly to the user.
 		if len(memberStruct.Members) > 0 {
