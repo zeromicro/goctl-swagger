@@ -376,7 +376,7 @@ func renderMember(pathParamMap map[string]swaggerParameterObject,
 		return
 	}
 
-	if p.Type == "query" {
+	if p.In == "query" {
 		containForm = true
 	}
 
@@ -543,10 +543,7 @@ func renderStruct(member spec.Member) swaggerParameterObject {
 
 func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.Type, refs refMap) {
 	for _, i2 := range p {
-		var (
-			formFields    []keyVal
-			untagesFields []keyVal
-		)
+		var formFields, untaggedFields swaggerSchemaObjectProperties
 
 		schema := swaggerSchemaObject{
 			schemaCore: schemaCore{
@@ -559,51 +556,7 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 		schema.Title = defineStruct.Name()
 
 		for _, member := range defineStruct.Members {
-			in := fieldIn(member)
-			if in == tagKeyHeader || in == tagKeyPath {
-				continue
-			}
-			kv := keyVal{Key: member.Name, Value: schemaOfField(member)}
-			if tag, err := member.GetPropertyName(); err == nil {
-				kv.Key = tag
-			}
-			if kv.Key == "" {
-				memberStruct, _ := member.Type.(spec.DefineStruct)
-				for _, m := range memberStruct.Members {
-					in = fieldIn(m)
-					if in == tagKeyHeader || in == tagKeyPath {
-						continue
-					}
-
-					mkv := keyVal{
-						Value: schemaOfField(m),
-						Key:   m.Name,
-					}
-
-					if tag, err := m.GetPropertyName(); err == nil {
-						mkv.Key = tag
-					}
-
-					switch in {
-					case tagKeyJson:
-						*schema.Properties = append(*schema.Properties, mkv)
-					case tagKeyForm:
-						formFields = append(formFields, mkv)
-					default:
-						untagesFields = append(untagesFields, mkv)
-					}
-				}
-				continue
-			}
-			switch in {
-			case tagKeyJson:
-				*schema.Properties = append(*schema.Properties, kv)
-			case tagKeyForm:
-				formFields = append(formFields, kv)
-			default:
-				untagesFields = append(untagesFields, kv)
-			}
-
+			collectProperties(schema.Properties, &formFields, &untaggedFields, member)
 			for _, tag := range member.Tags() {
 				if len(tag.Options) == 0 {
 					if !contains(schema.Required, tag.Name) && tag.Name != "required" {
@@ -627,19 +580,49 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 				}
 			}
 		}
-		// if there exists any json fields, form fields are ignored (considered to be query params).
-		if len(*schema.Properties) > 0 || len(formFields) == 0 {
-			if len(untagesFields) > 0 {
-				*schema.Properties = append(*schema.Properties, untagesFields...)
-			}
-		} else {
+		// if there exists any json fields, form fields are ignored (considered to be params in query).
+		if len(*schema.Properties) == 0 || len(formFields) > 0 {
 			*schema.Properties = formFields
-			if len(untagesFields) > 0 {
-				*schema.Properties = append(*schema.Properties, untagesFields...)
-			}
+		}
+		if len(untaggedFields) > 0 {
+			*schema.Properties = append(*schema.Properties, untaggedFields...)
 		}
 
 		d[i2.Name()] = schema
+	}
+}
+
+func collectProperties(jsonFields, formFields, untaggedFields *swaggerSchemaObjectProperties, member spec.Member) {
+	in := fieldIn(member)
+	if in == tagKeyHeader || in == tagKeyPath {
+		return
+	}
+
+	name := member.Name
+	if tag, err := member.GetPropertyName(); err == nil {
+		name = tag
+	}
+	if name == "" {
+		memberStruct, _ := member.Type.(spec.DefineStruct)
+		// currently go-zero does not support show members of nested over 2 levels(include).
+		// but openapi 2.0 does not support inline schema, we have no choice but use an empty properties name
+		// which is not friendly to the user.
+		if len(memberStruct.Members) > 0 {
+			for _, m := range memberStruct.Members {
+				collectProperties(jsonFields, formFields, untaggedFields, m)
+			}
+			return
+		}
+	}
+
+	kv := keyVal{Key: name, Value: schemaOfField(member)}
+	switch in {
+	case tagKeyJson:
+		*jsonFields = append(*jsonFields, kv)
+	case tagKeyForm:
+		*formFields = append(*formFields, kv)
+	default:
+		*untaggedFields = append(*untaggedFields, kv)
 	}
 }
 
