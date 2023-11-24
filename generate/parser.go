@@ -32,6 +32,15 @@ const (
 	atRespDoc       = "@respdoc-"
 )
 
+const ( // JSON保留tag => 新增请append到SkipTags里面
+	validateTag    = "validate"
+	validatorTag   = "validator"
+	descriptionTag = "description"
+	defaultTag     = "default"
+)
+
+var skipTags = []string{validateTag, validatorTag, descriptionTag, defaultTag} // 跳过这些保留tag的Key,以后有新的需要跳过字段往这里面加
+
 func parseRangeOption(option string) (float64, float64, bool) {
 	const str = "\\[([+-]?\\d+(\\.\\d+)?):([+-]?\\d+(\\.\\d+)?)\\]"
 	result := regexp.MustCompile(str).FindStringSubmatch(option)
@@ -420,6 +429,9 @@ func renderStruct(member spec.Member) swaggerParameterObject {
 		}
 
 		sp.Name = tag.Name
+		if tag.Key == descriptionTag { // 给自定义结构体的描述赋值,如果有description tag,则用,没有的话使用//后面的作为表示
+			sp.Description = tag.Name
+		}
 		if len(tag.Options) == 0 {
 			sp.Required = true
 			continue
@@ -524,7 +536,7 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 					continue
 				}
 				if len(tag.Options) == 0 {
-					if !contains(schema.Required, tag.Name) && tag.Name != "required" {
+					if !contains(schema.Required, tag.Name) && (tag.Name != "required" && !contains(skipTags, tag.Key)) {
 						schema.Required = append(schema.Required, tag.Name)
 					}
 					continue
@@ -655,6 +667,9 @@ func schemaOfField(member spec.Member) swaggerSchemaObject {
 	ret.Description = comment
 
 	for _, tag := range member.Tags() {
+		if tag.Key == descriptionTag {
+			ret.Description = tag.Name // 给自定义结构体的描述赋值,如果有description tag,则用,没有的话使用//后面的作为表示
+		}
 		if len(tag.Options) == 0 {
 			continue
 		}

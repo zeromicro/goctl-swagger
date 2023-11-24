@@ -158,6 +158,11 @@
         "password": {
           "type": "string",
           "description": "测试2"
+        },
+        "gender": {
+          "type": "integer",
+          "format": "int32",
+          "description": "性别 0女 1男"
         }
       },
       "title": "LoginReq",
@@ -170,7 +175,8 @@
       "type": "object",
       "properties": {
         "username": {
-          "type": "string"
+          "type": "string",
+          "description": "用户名"
         },
         "password": {
           "type": "string"
