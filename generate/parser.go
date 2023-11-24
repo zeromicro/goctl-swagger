@@ -121,45 +121,6 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 				path = "/" + path
 			}
 			parameters := swaggerParametersObject{}
-
-			if countParams(path) > 0 {
-				p := strings.Split(path, "/")
-				for i := range p {
-					part := p[i]
-					if strings.Contains(part, ":") {
-						key := strings.TrimPrefix(p[i], ":")
-						path = strings.Replace(path, fmt.Sprintf(":%s", key), fmt.Sprintf("{%s}", key), 1)
-
-						spo := swaggerParameterObject{
-							Name:     key,
-							In:       "path",
-							Required: true,
-							Type:     "string",
-						}
-
-						// extend the comment functionality
-						// to allow query string parameters definitions
-						// EXAMPLE:
-						// @doc(
-						// 	summary: "Get Cart"
-						// 	description: "returns a shopping cart if one exists"
-						// 	customerId: "customer id"
-						// )
-						//
-						// the format for a parameter is
-						// paramName: "the param description"
-						//
-
-						prop := route.AtDoc.Properties[key]
-						if prop != "" {
-							// remove quotes
-							spo.Description = strings.Trim(prop, "\"")
-						}
-
-						parameters = append(parameters, spo)
-					}
-				}
-			}
 			if defineStruct, ok := route.RequestType.(spec.DefineStruct); ok {
 				for _, member := range defineStruct.Members {
 					if member.Name == "" {
@@ -228,9 +189,6 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 				}
 				if strings.ToUpper(route.Method) == http.MethodGet {
 					for _, member := range defineStruct.Members {
-						if strings.Contains(member.Tag, "path") {
-							continue
-						}
 						if embedStruct, isEmbed := member.Type.(spec.DefineStruct); isEmbed {
 							for _, m := range embedStruct.Members {
 								parameters = append(parameters, renderStruct(m))
@@ -418,7 +376,9 @@ func renderStruct(member spec.Member) swaggerParameterObject {
 		if tag.Key == validateKey {
 			continue
 		}
-
+		if tag.Key == "path" {
+			sp.In = "path"
+		}
 		sp.Name = tag.Name
 		if len(tag.Options) == 0 {
 			sp.Required = true
