@@ -15,7 +15,7 @@ Method | HTTP request | Description
 
 ### Example
 ```javascript
-var SwaggerJsClient = require('swagger-js-client');
+var SwaggerJsClient = require('Swagger-js-client');
 
 var apiInstance = new SwaggerJsClient.GreetApi();
 

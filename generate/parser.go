@@ -217,7 +217,6 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 
 						doc := strings.Join(route.RequestType.Documents(), ",")
 						doc = strings.Replace(doc, "//", "", -1)
-
 						if doc != "" {
 							parameter.Description = doc
 						}
