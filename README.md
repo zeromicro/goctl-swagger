@@ -3,7 +3,7 @@
 ### 1. 编译goctl-swagger插件
 
 ```
-GOPROXY=https://goproxy.cn/,direct go install github.com/zeromicro/goctl-swagger@latest
+GOPROXY=https://goproxy.cn/,direct go install github.com/aishuchen/goctl-swagger@latest
 ```
 
 ### 2. 配置环境
@@ -83,13 +83,23 @@ GOPROXY=https://goproxy.cn/,direct go install github.com/zeromicro/goctl-swagger
 * 生成swagger.json 文件
 
     ```shell script
-    goctl api plugin -plugin goctl-swagger="swagger -filename user.json" -api user.api -dir .
+    # 在goctl中使用
+    goctl api plugin -plugin goctl-swagger="swagger -target user.json" -api user.api -dir .
+    # 在本地使用
+    go run main.go swagger -target swagger.json 0<~/tmp.json
+    ```
+    tmp.json:
+    ```json
+    {
+        "ApiFilePath": "your.api",
+        "Dir": "."
+    }
     ```
 
 * 指定Host，basePath，schemes [api-host-and-base-path](https://swagger.io/docs/specification/2-0/api-host-and-base-path/)
 
     ```shell script
-    goctl api plugin -plugin goctl-swagger="swagger -filename user.json -host 127.0.0.2 -basepath /api -schemes https,wss" -api user.api -dir .
+    goctl api plugin -plugin goctl-swagger="swagger -target user.json -host 127.0.0.2 -basepath /api -schemes https,wss" -api user.api -dir .
     ```
 
 * swagger ui 查看生成的文档
@@ -98,7 +108,7 @@ GOPROXY=https://goproxy.cn/,direct go install github.com/zeromicro/goctl-swagger
      docker run --rm -p 8083:8080 -e SWAGGER_JSON=/foo/user.json -v $PWD:/foo swaggerapi/swagger-ui
    ```
 
-* Swagger Codegen 生成客户端调用代码(go,javascript,php)
+* swagger Codegen 生成客户端调用代码(go,javascript,php)
 
   ```shell script
   for l in go javascript php; do
