@@ -51,8 +51,26 @@ GOPROXY=https://goproxy.cn/,direct go install github.com/zeromicro/goctl-swagger
      UserSearchReq {
       KeyWord string `form:"keyWord"`
      }
+  
+     UploadReq {
+      Type int    `form:"type"`
+      Key  string `form:"key,optional"`
+     }
+     
+     UploadResp {
+      Name string `json:"name"`
+      Age int `json:"age"`
+      Birthday string `json:"birthday"`
+      Description string `json:"description"`
+      Tag []string `json:"tag"`
+     }
     )
     
+    @server(
+      // 这里是为了给service添加swagger的security，用于使用Authorize添加到接口的header
+      // 如果添加了jwt，这个描述可以省略
+      security: true
+    )
     service user-api {
      @doc(
       summary: "注册"
@@ -77,6 +95,13 @@ GOPROXY=https://goproxy.cn/,direct go install github.com/zeromicro/goctl-swagger
      )
      @handler searchUser
      get /api/user/search (UserSearchReq) returns (UserInfoReply)
+  
+     @doc(
+      summary: "上传文件，body修改为formData，并添加一个file参数"
+      inject_formdata_param: "file"
+     )
+     @handler UploadHandler
+     post /file/upload (UploadReq) returns (UploadResp)
     }
     ```
 

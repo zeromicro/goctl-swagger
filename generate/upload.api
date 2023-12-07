@@ -1,0 +1,28 @@
+syntax = "v1"
+
+// 上传文件
+type UploadRequest {
+	Type int    `form:"type"`         // Type 1视频 2音频 3图片 4文档 5附件
+	Key  string `form:"key,optional"` // Key 用于自定义保存到COS的文件名称，会自动加上传的文件后缀
+}
+
+type UploadResp {
+	Msg string `json:"msg"`
+	ID  string `json:"id"`
+	Src string `json:"src"`
+}
+
+// 文件
+@server (
+	middleware: Auth
+	group: api
+	security: true
+)
+service upload {
+	@doc (
+		summary : "上传文件"
+		inject_formdata_param: "file"
+	)
+	@handler UploadHandler
+	post /file/upload (UploadRequest) returns (UploadResp)
+}

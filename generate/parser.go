@@ -241,30 +241,82 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 					}
 				} else {
 
-					reqRef := fmt.Sprintf("#/definitions/%s", route.RequestType.Name())
-
 					if len(route.RequestType.Name()) > 0 {
-						schema := swaggerSchemaObject{
-							schemaCore: schemaCore{
-								Ref: reqRef,
-							},
+						// If there is a file key in the @doc, add the file parameter, and the parameter will be changed to formData
+						// Example:
+						// @doc(
+						// 	inject_formdata_param: "file"
+						// )
+						if fileKey, ok := route.AtDoc.Properties["inject_formdata_param"]; ok {
+							// First, add a file parameter to the form data
+							fileParameter := swaggerParameterObject{
+								Name:     strings.Trim(fileKey, "\""),
+								Type:     "file",
+								In:       "formData",
+								Required: true,
+							}
+
+							parameters = append(parameters, fileParameter)
+
+							// Construct the remaining parameters
+							for _, member := range defineStruct.Members {
+								required := true
+								// Whether the parameter is mandatory
+								for _, tag := range member.Tags() {
+									for _, option := range tag.Options {
+										if strings.HasPrefix(option, optionalOption) || strings.HasPrefix(option, omitemptyOption) {
+											required = false
+										}
+									}
+								}
+
+								// Obtain the parameter type
+								tempKind := swaggerMapTypes[strings.Replace(member.Type.Name(), "[]", "", -1)]
+								ftype, format, ok := primitiveSchema(tempKind, member.Type.Name())
+								if !ok {
+									ftype = tempKind.String()
+									format = "UNKNOWN"
+								}
+
+								// Construction parameters
+								fileParameter := swaggerParameterObject{
+									Name:        strings.ToLower(strings.Trim(member.Name, "\"")),
+									Type:        ftype,
+									Format:      format,
+									In:          "formData",
+									Required:    required,
+									Description: member.GetComment(),
+								}
+
+								parameters = append(parameters, fileParameter)
+							}
+						} else {
+							reqRef := fmt.Sprintf("#/definitions/%s", route.RequestType.Name())
+
+							schema := swaggerSchemaObject{
+								schemaCore: schemaCore{
+									Ref: reqRef,
+								},
+							}
+
+							parameter := swaggerParameterObject{
+								Name:     "body",
+								In:       "body",
+								Required: true,
+								Schema:   &schema,
+							}
+
+							doc := strings.Join(route.RequestType.Documents(), ",")
+							doc = strings.Replace(doc, "//", "", -1)
+
+							if doc != "" {
+								parameter.Description = doc
+							}
+
+							parameters = append(parameters, parameter)
+
 						}
 
-						parameter := swaggerParameterObject{
-							Name:     "body",
-							In:       "body",
-							Required: true,
-							Schema:   &schema,
-						}
-
-						doc := strings.Join(route.RequestType.Documents(), ",")
-						doc = strings.Replace(doc, "//", "", -1)
-
-						if doc != "" {
-							parameter.Description = doc
-						}
-
-						parameters = append(parameters, parameter)
 					}
 				}
 			}
@@ -383,6 +435,8 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 			operationObject.Description = strings.ReplaceAll(operationObject.Description, "\"", "")
 
 			if group.Annotation.Properties["jwt"] != "" {
+				operationObject.Security = &[]swaggerSecurityRequirementObject{{"apiKey": []string{}}}
+			} else if group.Annotation.Properties["security"] == "true" {
 				operationObject.Security = &[]swaggerSecurityRequirementObject{{"apiKey": []string{}}}
 			}
 
@@ -572,7 +626,7 @@ func schemaOfField(member spec.Member) swaggerSchemaObject {
 	comment = strings.Replace(comment, "//", "", -1)
 
 	switch ft := kind; ft {
-	case reflect.Invalid: //[]Struct 也有可能是 Struct
+	case reflect.Invalid: // []Struct 也有可能是 Struct
 		// []Struct
 		// map[ArrayType:map[Star:map[StringExpr:UserSearchReq] StringExpr:*UserSearchReq] StringExpr:[]*UserSearchReq]
 		refTypeName := strings.Replace(member.Type.Name(), "[", "", 1)
