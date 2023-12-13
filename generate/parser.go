@@ -228,11 +228,14 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 				}
 				if strings.ToUpper(route.Method) == http.MethodGet {
 					for _, member := range defineStruct.Members {
-						if strings.Contains(member.Tag, "path") {
+						if strings.Contains(member.Tag, "path") || strings.Contains(member.Tag, "header") {
 							continue
 						}
 						if embedStruct, isEmbed := member.Type.(spec.DefineStruct); isEmbed {
 							for _, m := range embedStruct.Members {
+								if strings.Contains(m.Tag, "path") || strings.Contains(m.Tag, "header") {
+									continue
+								}
 								parameters = append(parameters, renderStruct(m))
 							}
 							continue
