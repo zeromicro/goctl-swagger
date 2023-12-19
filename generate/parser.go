@@ -534,7 +534,7 @@ func renderStruct(member spec.Member) swaggerParameterObject {
 	}
 
 	if len(member.Comment) > 0 {
-		sp.Description = strings.TrimLeft(member.Comment, "//")
+		sp.Description = strings.Replace(strings.TrimLeft(member.Comment, "//"), "\\n", "\n", -1)
 	}
 
 	return sp
@@ -647,7 +647,7 @@ func schemaOfField(member spec.Member) swaggerSchemaObject {
 	var props *swaggerSchemaObjectProperties
 
 	comment := member.GetComment()
-	comment = strings.Replace(comment, "//", "", -1)
+	comment = strings.Replace(strings.Replace(comment, "//", "", -1), "\\n", "\n", -1)
 
 	switch ft := kind; ft {
 	case reflect.Invalid: //[]Struct 也有可能是 Struct
