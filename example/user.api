@@ -1,81 +1,81 @@
 info(
-    title: "type title here"
-    desc: "type desc here"
-    author: "type author here"
-    email: "type email here"
-    version: "type version here"
+	title: "type title here"
+	desc: "type desc here"
+	author: "type author here"
+	email: "type email here"
+	version: "type version here"
 )
 
-
 type (
-    
-    //注册请求结构
-    RegisterReq {
-        Username string `json:"username"`
-        Password string `json:"password"`
-        Mobile string `json:"mobile"`
-    }
 
-    LoginReq {
-        Username string `json:"username"` //测试
-        Password string `json:"password"`//测试2
-    }
-    UserInfoReq {
-        Id string `path:"id"`
-    }
+	//注册请求结构
+	RegisterReq {
+		Username string `json:"username"`
+		Password string `json:"password"`
+		Mobile   string `json:"mobile"`
+	}
 
-    UserInfoReply {
-        Name string `json:"name"`
-        Age int `json:"age"`
-        Birthday string `json:"birthday"`
-        Description string `json:"description"`
-        Tag []string `json:"tag"`
-        Tags [][]string `json:"tags"`
-    }
+	LoginReq {
+		Username string `json:"username"` //测试
+		Password string `json:"password"` //测试2
+		AppId    string `header:"appId"`  //APPID-TEST
+	}
+	UserInfoReq {
+		Id string `path:"id"`
+	}
 
-    UserSearchReq {
-        KeyWord string `form:"keyWord"` // 关键词
-    }
+	UserInfoReply {
+		Name        string     `json:"name"`
+		Age         int        `json:"age"`
+		Birthday    string     `json:"birthday"`
+		Description string     `json:"description"`
+		Tag         []string   `json:"tag"`
+		Tags        [][]string `json:"tags"`
+	}
 
-    ErrorResponse {
-        Code string `json:"code"`
-        Message string `json:"message"`
-    }
+	UserSearchReq {
+		KeyWord string `form:"keyWord"` // 关键词
+	}
+
+	ErrorResponse {
+		Code    string `json:"code"`
+		Message string `json:"message"`
+	}
 )
 
 @server(
-  prefix: /api
+	prefix: /api
 )
 
 service user-api {
-    @doc(
-        summary: 注册
-    )
-    @handler register
-    post /user/register (RegisterReq)
+	@doc(
+		summary: 注册
+	)
+	@handler register
+	post /user/register (RegisterReq)
 
-    @doc(
-        summary: 登录
-    )
-    @handler login
-    post /user/login (LoginReq)
+	@doc(
+		summary: 登录
+	)
+	@handler login
+	post /user/login (LoginReq)
 
-    @doc(
-        summary: 获取用户信息
-    )
-    @handler getUserInfo
-    /*
-    @respdoc-400 (
-        100101: out of authority
-        100102: user not exist
-    ) // Error code list
-    */
-    /*    @respdoc-500 (ErrorResponse) // Server Error */
-    get /user/:id (UserInfoReq) returns (UserInfoReply)
+	@doc(
+		summary: 获取用户信息
+	)
+	@handler getUserInfo
+	/*
+	@respdoc-400 (
+		100101: out of authority
+		100102: user not exist
+	) // Error code list
+	*/
+	/*    @respdoc-500 (ErrorResponse) // Server Error */
+	get /user/:id (UserInfoReq) returns (UserInfoReply)
 
-    @doc(
-        summary: 用户搜索
-    )
-    @handler searchUser
-    get /user/search (UserSearchReq) returns (UserInfoReply)
+	@doc(
+		summary: 用户搜索
+	)
+	@handler searchUser
+	get /user/search (UserSearchReq) returns (UserInfoReply)
 }
