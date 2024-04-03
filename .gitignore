@@ -16,3 +16,5 @@ Thumbs.db
 
 #
 .swagger-codegen
+swagtest
+*.exe
