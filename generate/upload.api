@@ -12,6 +12,12 @@ type UploadResp {
 	Src string `json:"src"`
 }
 
+type Resp {
+	Data UploadResp `json:"data"`
+	Msg string `json:"msg"`
+	Code int `json:"code"`
+}
+
 // 文件
 @server (
 	middleware: Auth
@@ -24,5 +30,5 @@ service upload {
 		inject_formdata_param: "file"
 	)
 	@handler UploadHandler
-	post /file/upload (UploadRequest) returns (UploadResp)
+	post /file/upload (UploadRequest) returns (Resp)
 }

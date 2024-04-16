@@ -24,7 +24,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/UploadResp"
+              "$ref": "#/definitions/Resp"
             }
           }
         },
@@ -66,6 +66,27 @@
     }
   },
   "definitions": {
+    "Resp": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/UploadResp"
+        },
+        "msg": {
+          "type": "string"
+        },
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "title": "Resp",
+      "required": [
+        "data",
+        "msg",
+        "code"
+      ]
+    },
     "UploadRequest": {
       "type": "object",
       "properties": {
