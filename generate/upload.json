@@ -1,0 +1,137 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "",
+    "version": ""
+  },
+  "host": "127.0.0.1:8890",
+  "basePath": "/",
+  "schemes": [
+    "http"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/file/upload": {
+      "post": {
+        "summary": "上传文件",
+        "operationId": "UploadHandler",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/Resp"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "file",
+            "in": "formData",
+            "required": true,
+            "type": "file"
+          },
+          {
+            "name": "type",
+            "description": "// Type 1视频 2音频 3图片 4文档 5附件",
+            "in": "formData",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "key",
+            "description": "// Key 用于自定义保存到COS的文件名称，会自动加上传的文件后缀",
+            "in": "formData",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "api"
+        ],
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "security": [
+          {
+            "apiKey": []
+          }
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "Resp": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/UploadResp"
+        },
+        "msg": {
+          "type": "string"
+        },
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "title": "Resp",
+      "required": [
+        "data",
+        "msg",
+        "code"
+      ]
+    },
+    "UploadRequest": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "integer",
+          "format": "int32",
+          "description": " Type 1视频 2音频 3图片 4文档 5附件"
+        },
+        "key": {
+          "type": "string",
+          "description": " Key 用于自定义保存到COS的文件名称，会自动加上传的文件后缀"
+        }
+      },
+      "title": "UploadRequest",
+      "required": [
+        "type"
+      ]
+    },
+    "UploadResp": {
+      "type": "object",
+      "properties": {
+        "msg": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "src": {
+          "type": "string"
+        }
+      },
+      "title": "UploadResp",
+      "required": [
+        "msg",
+        "id",
+        "src"
+      ]
+    }
+  },
+  "securityDefinitions": {
+    "apiKey": {
+      "type": "apiKey",
+      "description": "Enter JWT Bearer token **_only_**",
+      "name": "Authorization",
+      "in": "header"
+    }
+  }
+}
