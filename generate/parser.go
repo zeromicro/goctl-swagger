@@ -422,6 +422,7 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 
 		schema.Title = defineStruct.Name()
 
+		km := make(map[string]int)
 		for _, member := range defineStruct.Members {
 			if hasPathParameters(member) || hasHeaderParameters(member) {
 				continue
@@ -449,6 +450,12 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 					if schema.Properties == nil {
 						schema.Properties = &swaggerSchemaObjectProperties{}
 					}
+
+					if _, ok := km[mkv.Key]; ok {
+						continue
+					}
+					km[mkv.Key] = len(*schema.Properties)
+
 					*schema.Properties = append(*schema.Properties, mkv)
 				}
 				continue
@@ -456,6 +463,11 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 			if schema.Properties == nil {
 				schema.Properties = &swaggerSchemaObjectProperties{}
 			}
+
+			if idx, ok := km[kv.Key]; ok {
+				*schema.Properties = append((*schema.Properties)[:idx], (*schema.Properties)[idx+1:]...)
+			}
+			km[kv.Key] = len(*schema.Properties)
 			*schema.Properties = append(*schema.Properties, kv)
 
 			for _, tag := range member.Tags() {
@@ -520,7 +532,7 @@ func schemaOfField(member spec.Member) swaggerSchemaObject {
 	comment = strings.Replace(comment, "//", "", -1)
 
 	switch ft := kind; ft {
-	case reflect.Invalid: //[]Struct 也有可能是 Struct
+	case reflect.Invalid: // []Struct 也有可能是 Struct
 		// []Struct
 		// map[ArrayType:map[Star:map[StringExpr:UserSearchReq] StringExpr:*UserSearchReq] StringExpr:[]*UserSearchReq]
 		refTypeName := strings.Replace(member.Type.Name(), "[", "", 1)
