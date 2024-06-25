@@ -379,6 +379,9 @@ func renderStruct(member spec.Member) swaggerParameterObject {
 				if len(segs) == 2 {
 					min, max, ok := parseRangeOption(segs[1])
 					if ok {
+						if sp.Schema == nil {
+							sp.Schema = &swaggerSchemaObject{}
+						}
 						sp.Schema.Minimum = min
 						sp.Schema.Maximum = max
 					}
@@ -731,6 +734,9 @@ func parseHeader(m spec.Member, parameters []swaggerParameterObject) []swaggerPa
 				if len(segs) == 2 {
 					min, max, ok := parseRangeOption(segs[1])
 					if ok {
+						if sp.Schema == nil {
+							sp.Schema = &swaggerSchemaObject{}
+						}
 						sp.Schema.Minimum = min
 						sp.Schema.Maximum = max
 					}
