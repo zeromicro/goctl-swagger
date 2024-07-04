@@ -1,7 +1,0 @@
-type (
-    RegisterReq {
-        Username string `json:"username"`
-        Password string `json:"password"`
-        Mobile string `json:"mobile"`
-    }
-)
