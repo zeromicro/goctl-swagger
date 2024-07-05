@@ -226,6 +226,12 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 					respSchema.Items = &swaggerItemsObject{Ref: fmt.Sprintf("#/definitions/%s", refTypeName)}
 				} else {
 					respSchema.Ref = fmt.Sprintf("#/definitions/%s", route.ResponseType.Name())
+					tempKind := swaggerMapTypes[route.ResponseType.Name()]
+					ftype, _, ok := primitiveSchema(tempKind, route.ResponseType.Name())
+					if ok {
+						respSchema.Ref = fmt.Sprintf("#/definitions/%s", ftype)
+					}
+
 				}
 			}
 			tags := service.Name
@@ -310,13 +316,21 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 
 			for _, param := range operationObject.Parameters {
 				if param.Schema != nil && param.Schema.Ref != "" {
-					requestResponseRefs[param.Schema.Ref] = struct{}{}
+					requestResponseRefs[param.Schema.Ref] = struct {
+						Type string
+					}{
+						Type: route.RequestType.Name(),
+					}
 				}
 			}
 
 			for _, response := range operationObject.Responses {
 				if response.Schema.Ref != "" {
-					requestResponseRefs[response.Schema.Ref] = struct{}{}
+					requestResponseRefs[response.Schema.Ref] = struct {
+						Type string
+					}{
+						Type: route.ResponseType.Name(),
+					}
 				}
 			}
 			operationObject.Summary = strings.ReplaceAll(route.JoinedDoc(), "\"", "")
@@ -789,10 +803,9 @@ func parseHeader(m spec.Member, parameters []swaggerParameterObject) []swaggerPa
 // findRequestResponsePrimitiveSchema on request type or response type
 func findRequestResponsePrimitiveSchema(ref refMap) []string {
 	var response []string
-	for k := range ref {
-		k = strings.TrimPrefix(k, "#/definitions/")
-		tempKind := swaggerMapTypes[k]
-		ftype, _, ok := primitiveSchema(tempKind, k)
+	for _, v := range ref {
+		tempKind := swaggerMapTypes[v.Type]
+		ftype, _, ok := primitiveSchema(tempKind, v.Type)
 		if ok {
 			response = append(response, ftype)
 		}

@@ -258,4 +258,6 @@ type swaggerSchemaObject struct {
 type swaggerDefinitionsObject map[string]swaggerSchemaObject
 
 // Internal type to store used references.
-type refMap map[string]struct{}
+type refMap map[string]struct {
+	Type string
+}
