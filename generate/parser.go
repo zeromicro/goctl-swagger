@@ -56,9 +56,20 @@ func parseRangeOption(option string) (float64, float64, bool) {
 }
 
 func applyGenerate(p *plugin.Plugin, host string, basePath string, schemes string) (*swaggerObject, error) {
-	title, _ := strconv.Unquote(p.Api.Info.Properties["title"])
-	version, _ := strconv.Unquote(p.Api.Info.Properties["version"])
-	desc, _ := strconv.Unquote(p.Api.Info.Properties["desc"])
+	var (
+		title, version, desc string
+		err                  error
+	)
+
+	if title, err = strconv.Unquote(p.Api.Info.Properties["title"]); err != nil {
+		title = p.Api.Info.Properties["title"]
+	}
+	if version, err = strconv.Unquote(p.Api.Info.Properties["version"]); err != nil {
+		version = p.Api.Info.Properties["version"]
+	}
+	if desc, err = strconv.Unquote(p.Api.Info.Properties["desc"]); err != nil {
+		desc = p.Api.Info.Properties["desc"]
+	}
 
 	s := swaggerObject{
 		Swagger:           "2.0",
@@ -237,9 +248,14 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 			if value := group.GetAnnotation("swtags"); len(value) > 0 {
 				tags = value
 			}
+			if route.AtDoc.Properties["tags"] != "" {
+				// Acccept tags from @doc annotation
+				tags = route.AtDoc.Properties["tags"]
+				tags = strings.Trim(tags, "\"")
+			}
 
 			operationObject := &swaggerOperationObject{
-				Tags:       []string{tags},
+				Tags:       strings.Split(tags, ","),
 				Parameters: parameters,
 				Responses: swaggerResponsesObject{
 					"200": swaggerResponseObject{
@@ -592,7 +608,7 @@ func schemaOfField(member spec.Member) swaggerSchemaObject {
 			}
 		}
 		if strings.HasPrefix(member.Type.Name(), "map") {
-			fmt.Println("暂不支持map类型")
+			// fmt.Println("暂不支持map类型")
 		}
 	default:
 		ret = swaggerSchemaObject{
