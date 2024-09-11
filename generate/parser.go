@@ -253,7 +253,8 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 
 			if defineStruct, ok := route.RequestType.(spec.DefineStruct); ok {
 				for _, member := range defineStruct.Members {
-					if strings.Contains(member.Tag, "form") {
+					structTag := reflect.StructTag(member.Tag)
+					if len(structTag.Get("form")) != 0 {
 						operationObject.Consumes = []string{"multipart/form-data"}
 						break
 					}
