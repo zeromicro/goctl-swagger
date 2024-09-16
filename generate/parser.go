@@ -165,7 +165,7 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 						parameters = parseHeader(member, parameters)
 					}
 				}
-				if strings.ToUpper(route.Method) == http.MethodGet {
+				if strings.ToUpper(route.Method) == http.MethodGet || strings.ToUpper(route.Method) == http.MethodDelete {
 					for _, member := range defineStruct.Members {
 						if hasPathParameters(member) || hasHeaderParameters(member) {
 							continue
