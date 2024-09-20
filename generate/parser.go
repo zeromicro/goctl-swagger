@@ -106,9 +106,8 @@ func applyGenerate(p *plugin.Plugin, host string, basePath string, schemes strin
 
 	requestResponseRefs := refMap{}
 	renderServiceRoutes(p.Api.Service, p.Api.Service.Groups, s.Paths, requestResponseRefs)
-	m := messageMap{}
 
-	renderReplyAsDefinition(s.Definitions, m, p.Api.Types, requestResponseRefs)
+	renderReplyAsDefinition(s.Definitions, p.Api.Types, requestResponseRefs)
 
 	return &s, nil
 }
@@ -166,7 +165,7 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 						parameters = parseHeader(member, parameters)
 					}
 				}
-				if strings.ToUpper(route.Method) == http.MethodGet {
+				if strings.ToUpper(route.Method) == http.MethodGet || strings.ToUpper(route.Method) == http.MethodDelete {
 					for _, member := range defineStruct.Members {
 						if hasPathParameters(member) || hasHeaderParameters(member) {
 							continue
@@ -227,6 +226,12 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 					respSchema.Items = &swaggerItemsObject{Ref: fmt.Sprintf("#/definitions/%s", refTypeName)}
 				} else {
 					respSchema.Ref = fmt.Sprintf("#/definitions/%s", route.ResponseType.Name())
+					tempKind := swaggerMapTypes[route.ResponseType.Name()]
+					ftype, _, ok := primitiveSchema(tempKind, route.ResponseType.Name())
+					if ok {
+						respSchema.Ref = fmt.Sprintf("#/definitions/%s", ftype)
+					}
+
 				}
 			}
 			tags := service.Name
@@ -311,7 +316,21 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 
 			for _, param := range operationObject.Parameters {
 				if param.Schema != nil && param.Schema.Ref != "" {
-					requestResponseRefs[param.Schema.Ref] = struct{}{}
+					requestResponseRefs[param.Schema.Ref] = struct {
+						Type string
+					}{
+						Type: route.RequestType.Name(),
+					}
+				}
+			}
+
+			for _, response := range operationObject.Responses {
+				if response.Schema.Ref != "" {
+					requestResponseRefs[response.Schema.Ref] = struct {
+						Type string
+					}{
+						Type: route.ResponseType.Name(),
+					}
 				}
 			}
 			operationObject.Summary = strings.ReplaceAll(route.JoinedDoc(), "\"", "")
@@ -411,7 +430,7 @@ func renderStruct(member spec.Member) swaggerParameterObject {
 	return sp
 }
 
-func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.Type, refs refMap) {
+func renderReplyAsDefinition(d swaggerDefinitionsObject, p []spec.Type, refs refMap) {
 	for _, i2 := range p {
 		schema := swaggerSchemaObject{
 			schemaCore: schemaCore{
@@ -486,6 +505,17 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 		}
 
 		d[i2.Name()] = schema
+	}
+
+	// find request and response type primitiveSchema
+	requestResponsePrimitiveSchema := findRequestResponsePrimitiveSchema(refs)
+	for _, v := range requestResponsePrimitiveSchema {
+		schema := swaggerSchemaObject{
+			schemaCore: schemaCore{
+				Type: v,
+			},
+		}
+		d[v] = schema
 	}
 }
 
@@ -768,4 +798,17 @@ func parseHeader(m spec.Member, parameters []swaggerParameterObject) []swaggerPa
 		}
 	}
 	return append(parameters, sp)
+}
+
+// findRequestResponsePrimitiveSchema on request type or response type
+func findRequestResponsePrimitiveSchema(ref refMap) []string {
+	var response []string
+	for _, v := range ref {
+		tempKind := swaggerMapTypes[v.Type]
+		ftype, _, ok := primitiveSchema(tempKind, v.Type)
+		if ok {
+			response = append(response, ftype)
+		}
+	}
+	return response
 }

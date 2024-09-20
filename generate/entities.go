@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"reflect"
-
-	"github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway/descriptor"
 )
 
 var swaggerMapTypes = map[string]reflect.Kind{
@@ -259,13 +257,7 @@ type swaggerSchemaObject struct {
 // http://swagger.io/specification/#definitionsObject
 type swaggerDefinitionsObject map[string]swaggerSchemaObject
 
-// Internal type mapping from FQMN to descriptor.Message. Used as a set by the
-// findServiceMessages function.
-type messageMap map[string]*descriptor.Message
-
-// Internal type mapping from FQEN to descriptor.Enum. Used as a set by the
-// findServiceMessages function.
-type enumMap map[string]*descriptor.Enum
-
 // Internal type to store used references.
-type refMap map[string]struct{}
+type refMap map[string]struct {
+	Type string
+}
