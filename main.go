@@ -5,12 +5,12 @@ import (
 	"os"
 	"runtime"
 
+	"github.com/castlery/goctl-swagger/action"
 	"github.com/urfave/cli/v2"
-	"github.com/zeromicro/goctl-swagger/action"
 )
 
 var (
-	version  = "20220621"
+	version  = "20241126"
 	commands = []*cli.Command{
 		{
 			Name:   "swagger",
