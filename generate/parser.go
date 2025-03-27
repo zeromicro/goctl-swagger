@@ -224,9 +224,21 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 					refTypeName = strings.Replace(refTypeName, "]", "", 1)
 
 					respSchema.Type = "array"
-					respSchema.Items = &swaggerItemsObject{Ref: fmt.Sprintf("#/definitions/%s", refTypeName)}
+					sgType, sgFmt, isBaseType := MapGoTypeToSwaggerType(refTypeName)
+					if isBaseType {
+						respSchema.Items = &swaggerItemsObject{Type: sgType, Format: sgFmt}
+					} else {
+						respSchema.Items = &swaggerItemsObject{Ref: fmt.Sprintf("#/definitions/%s", refTypeName)}
+					}
 				} else {
-					respSchema.Ref = fmt.Sprintf("#/definitions/%s", route.ResponseType.Name())
+					refTypeName := route.ResponseType.Name()
+					sgType, sgFmt, isBaseType := MapGoTypeToSwaggerType(refTypeName)
+					if isBaseType {
+						respSchema.Type = sgType
+						respSchema.Format = sgFmt
+					} else {
+						respSchema.Ref = fmt.Sprintf("#/definitions/%s", refTypeName)
+					}
 				}
 			}
 			tags := service.Name
@@ -768,4 +780,37 @@ func parseHeader(m spec.Member, parameters []swaggerParameterObject) []swaggerPa
 		}
 	}
 	return append(parameters, sp)
+}
+
+// MapGoTypeToSwaggerType 将 Go 类型字符串映射为 Swagger 类型
+func MapGoTypeToSwaggerType(goType string) (sgType, sgFmt string, isBaseType bool) {
+	// 去掉前面的指针符号 * 或切片 []
+	goType = strings.TrimPrefix(goType, "*")
+
+	isBaseType = true
+
+	switch goType {
+	case "bool":
+		return "boolean", "", isBaseType
+	case "string":
+		return "string", "", isBaseType
+	case "int", "int8", "int16", "uint", "uint8", "uint16", "int32", "rune":
+		return "integer", "int32", isBaseType
+	case "int64", "uint32", "uint64", "uintptr":
+		return "integer", "int64", isBaseType
+	case "float32":
+		return "number", "float", isBaseType
+	case "float64":
+		return "number", "double", isBaseType
+	case "byte":
+		return "string", "byte", isBaseType
+	case "complex64", "complex128", "error":
+		return "string", "", isBaseType
+	case "interface{}":
+		return "object", "", isBaseType
+	default:
+		// 默认当作对象（struct）
+		isBaseType = false
+		return goType, "", isBaseType
+	}
 }
