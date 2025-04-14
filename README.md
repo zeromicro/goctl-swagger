@@ -2,7 +2,7 @@
 
 ## 废弃使用说明
 
-由于长期无人维护，此插件将不推荐使用，考虑到大家需求，goctl 内置实现了一套比较完善的 swagger 生成功能，可以使用 goctl api swagger 替换，详情参考 https://go-zero.dev/docs/tutorials/cli/swagger。
+由于长期无人维护，此插件将不推荐使用，考虑到大家需求，goctl 内置实现了一套比较完善的 swagger 生成功能，可以使用 goctl api swagger 替换，详情参考 https://go-zero.dev/docs/tutorials/cli/swagger
 
 
 ### 1. 编译goctl-swagger插件
