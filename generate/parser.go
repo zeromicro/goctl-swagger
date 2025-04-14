@@ -412,6 +412,7 @@ func renderStruct(member spec.Member) swaggerParameterObject {
 }
 
 func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.Type, refs refMap) {
+	var members = make(map[string]string)
 	for _, i2 := range p {
 		schema := swaggerSchemaObject{
 			schemaCore: schemaCore{
@@ -419,15 +420,15 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 			},
 		}
 		defineStruct, _ := i2.(spec.DefineStruct)
-
 		schema.Title = defineStruct.Name()
-
 		for _, member := range defineStruct.Members {
 			if hasPathParameters(member) || hasHeaderParameters(member) {
 				continue
 			}
-			kv := keyVal{Value: schemaOfField(member)}
+			value := schemaOfField(member)
+			kv := keyVal{Value: value}
 			kv.Key = member.Name
+			members[kv.Key] = value.Description
 			if tag, err := member.GetPropertyName(); err == nil {
 				kv.Key = tag
 			}
@@ -484,8 +485,17 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 				}
 			}
 		}
-
+		if k, ok := members[schema.Title]; ok {
+			schema.Description = k
+		}
 		d[i2.Name()] = schema
+	}
+
+	for name, schema := range d {
+		if des, ok := members[name]; ok {
+			schema.Description = des
+			d[name] = schema
+		}
 	}
 }
 
@@ -512,10 +522,8 @@ func schemaOfField(member spec.Member) swaggerSchemaObject {
 	ret := swaggerSchemaObject{}
 
 	var core schemaCore
-
 	kind := swaggerMapTypes[member.Type.Name()]
 	var props *swaggerSchemaObjectProperties
-
 	comment := member.GetComment()
 	comment = strings.Replace(comment, "//", "", -1)
 
@@ -544,7 +552,6 @@ func schemaOfField(member spec.Member) swaggerSchemaObject {
 			} else {
 				core.Items = &swaggerItemsObject{Type: ft.String(), Format: "UNKNOWN"}
 			}
-
 		} else {
 			core = schemaCore{
 				Ref: "#/definitions/" + refTypeName,
@@ -567,7 +574,6 @@ func schemaOfField(member spec.Member) swaggerSchemaObject {
 			core = schemaCore{Type: ft.String(), Format: "UNKNOWN"}
 		}
 	}
-
 	switch ft := kind; ft {
 	case reflect.Slice:
 		ret = swaggerSchemaObject{
@@ -601,7 +607,6 @@ func schemaOfField(member spec.Member) swaggerSchemaObject {
 		}
 	}
 	ret.Description = comment
-
 	for _, tag := range member.Tags() {
 		if len(tag.Options) == 0 {
 			continue
@@ -635,7 +640,6 @@ func schemaOfField(member spec.Member) swaggerSchemaObject {
 			}
 		}
 	}
-
 	return ret
 }
 
