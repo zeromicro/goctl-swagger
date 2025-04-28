@@ -352,7 +352,7 @@ func renderStruct(member spec.Member) swaggerParameterObject {
 		ftype = tempKind.String()
 		format = "UNKNOWN"
 	}
-	sp := swaggerParameterObject{In: "query", Type: ftype, Format: format}
+	sp := swaggerParameterObject{In: "query", Type: ftype, Format: format, Schema: &swaggerSchemaObject{}}
 
 	for _, tag := range member.Tags() {
 		if tag.Key == validateKey {
@@ -708,7 +708,7 @@ func parseHeader(m spec.Member, parameters []swaggerParameterObject) []swaggerPa
 		ftype = tempKind.String()
 		format = "UNKNOWN"
 	}
-	sp := swaggerParameterObject{In: "header", Type: ftype, Format: format}
+	sp := swaggerParameterObject{In: "header", Type: ftype, Format: format, Schema: &swaggerSchemaObject{}}
 
 	for _, tag := range m.Tags() {
 		sp.Name = tag.Name
