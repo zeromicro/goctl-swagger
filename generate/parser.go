@@ -530,9 +530,30 @@ func schemaOfField(member spec.Member) swaggerSchemaObject {
 		refTypeName = strings.Replace(refTypeName, "}", "", 1)
 		// interface
 
+		// 首先检查是否为基本类型
+		if tempKind := swaggerMapTypes[refTypeName]; tempKind != reflect.Invalid {
+			ftype, format, ok := primitiveSchema(tempKind, refTypeName)
+			if ok {
+				if strings.HasPrefix(member.Type.Name(), "[]") {
+					core = schemaCore{
+						Type: "array",
+						Items: &swaggerItemsObject{
+							Type:   ftype,
+							Format: format,
+						},
+					}
+				} else {
+					core = schemaCore{Type: ftype, Format: format}
+				}
+				break
+			}
+		}
+
 		if refTypeName == "interface" {
 			core = schemaCore{Type: "object"}
 		} else if refTypeName == "mapstringstring" {
+			core = schemaCore{Type: "object"}
+		} else if refTypeName == "mapstringinterface" {
 			core = schemaCore{Type: "object"}
 		} else if strings.HasPrefix(refTypeName, "[]") {
 			core = schemaCore{Type: "array"}
