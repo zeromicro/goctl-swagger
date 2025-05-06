@@ -78,4 +78,10 @@ service user-api {
 	)
 	@handler searchUser
 	get /user/search (UserSearchReq) returns (UserInfoReply)
+
+    @doc(
+        summary: 所有用户
+    )
+    @handler searchUserAll
+    get /user/searchAll (UserSearchReq) returns ([]UserInfoReq)
 }
