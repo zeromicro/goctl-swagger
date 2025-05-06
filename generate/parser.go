@@ -225,6 +225,8 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 
 					respSchema.Type = "array"
 					respSchema.Items = &swaggerItemsObject{Ref: fmt.Sprintf("#/definitions/%s", refTypeName)}
+				} else if route.ResponseType.Name() == "string" {
+					respSchema.Type = "string"
 				} else {
 					respSchema.Ref = fmt.Sprintf("#/definitions/%s", route.ResponseType.Name())
 				}
@@ -235,7 +237,7 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 			}
 
 			if value := group.GetAnnotation("swtags"); len(value) > 0 {
-				tags = value
+				tags = strings.Trim(value, "\"")
 			}
 
 			operationObject := &swaggerOperationObject{

@@ -123,6 +123,12 @@
             "in": "path",
             "required": true,
             "type": "string"
+          },
+          {
+            "name": "sign",
+            "in": "header",
+            "required": true,
+            "type": "string"
           }
         ],
         "tags": [
@@ -230,7 +236,15 @@
     },
     "UserInfoReq": {
       "type": "object",
-      "title": "UserInfoReq"
+      "properties": {
+        "sign": {
+          "type": "string"
+        }
+      },
+      "title": "UserInfoReq",
+      "required": [
+        "sign"
+      ]
     },
     "UserSearchReq": {
       "type": "object",
